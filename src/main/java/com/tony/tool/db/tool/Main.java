@@ -17,7 +17,6 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Created by Tony on 2017/4/25.
@@ -30,17 +29,28 @@ public class Main {
      * @param filePath 文件路径
      */
     public static String getContentByTableFile(String filePath) throws IOException {
-        InputStream is = new FileInputStream(filePath);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        StringBuilder result = new StringBuilder();
-        String str = reader.readLine();
-        String separator = System.getProperty("line.separator");
-        while (str != null) {
-            result.append(str).append(separator);
-            str = reader.readLine();
+        InputStream is = null;
+        BufferedReader reader = null;
+        StringBuilder result;
+        try {
+            is = new FileInputStream(filePath);
+            reader = new BufferedReader(new InputStreamReader(is));
+            result = new StringBuilder();
+            String str = reader.readLine();
+            String separator = System.getProperty("line.separator");
+            while (str != null) {
+                result.append(str).append(separator);
+                str = reader.readLine();
+            }
+
+        } finally {
+            if (is != null) {
+                is.close();
+            }
+            if (reader != null) {
+                reader.close();
+            }
         }
-        reader.close();
-        is.close();
         return result.toString();
     }
 
@@ -78,14 +88,15 @@ public class Main {
 
     /**
      * 转成sql
-     *
+     * <p>
+     * INSERT INTO tab_comp VALUES(item1, price1, qty1),
+     * (item2, price2, qty2),
+     * (item3, price3, qty3);
+     * </p>
      * @param table     表数据
      * @param tableName 表名
      */
     public static String toSql(Table table, String tableName) {
-//        INSERT INTO tab_comp VALUES(item1, price1, qty1),
-//        (item2, price2, qty2),
-//        (item3, price3, qty3);
         StringBuilder sb = new StringBuilder();
         sb.append("INSERT INTO " + tableName + " ");
         List cells = table.getHeader().getCells();
@@ -125,7 +136,7 @@ public class Main {
             pw.println(StringUtils.join(header.getCells(), ","));
         }
         List<Row> body = table.getBody();
-        if (body != null && body.size() > 0) {
+        if (body.isEmpty()) {
             for (Row row : body) {
                 pw.println(StringUtils.join(row.getCells(), ","));
             }
@@ -135,13 +146,13 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
-        String content = Main.getContentByTableFile("/Users/Tony/Desktop/b.txt");
+        String content = Main.getContentByTableFile("/Users/Tony/Desktop/test/2.txt");
         System.out.println("获取文件内容");
         System.out.println("=================================");
         System.out.println(content);
         List<Row> rows = resolve(content);
         Table table = resolve2Table(rows);
-        System.out.println(toSql(table, " MY_NAME"));
-        toCsv(table, "/Users/Tony/Desktop/" + UUID.randomUUID().toString().replace("-", "") + ".csv");
+        System.out.println(toSql(table, " t_vop_bil_bill_item"));
+        toCsv(table, "/Users/Tony/Desktop/test/2.csv");
     }
 }
