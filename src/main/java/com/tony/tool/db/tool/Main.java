@@ -136,7 +136,7 @@ public class Main {
             pw.println(StringUtils.join(header.getCells(), ","));
         }
         List<Row> body = table.getBody();
-        if (body.isEmpty()) {
+        if (!body.isEmpty()) {
             for (Row row : body) {
                 pw.println(StringUtils.join(row.getCells(), ","));
             }
@@ -146,13 +146,13 @@ public class Main {
     }
 
     public static void main(String[] args) throws IOException {
-        String content = Main.getContentByTableFile("/Users/Tony/Desktop/test/2.txt");
+        String content = Main.getContentByTableFile("/Users/Tony/Desktop/TODO/test.txt");
         System.out.println("获取文件内容");
         System.out.println("=================================");
         System.out.println(content);
         List<Row> rows = resolve(content);
         Table table = resolve2Table(rows);
-        System.out.println(toSql(table, " t_vop_bil_bill_item"));
-        toCsv(table, "/Users/Tony/Desktop/test/2.csv");
+        System.out.println(toSql(table, " t_vop_bil_bill"));
+        toCsv(table, "/Users/Tony/Desktop/TODO/t_vop_soa_account_setxxx.csv");
     }
 }
