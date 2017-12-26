@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>大数据测试</title>
+    <script charset="UTF-8" src="asset/jquery.js"></script>
+    <script charset="UTF-8" src="asset/underscore.js"></script>
+    <script charset="UTF-8" src="asset/hugeData/template-util.js"></script>
+    <script charset="UTF-8" src="asset/hugeData/grid.js"></script>
+    <script charset="UTF-8" src="asset/hugeData/testData.js"></script>
+    <script charset="UTF-8" src="asset/hugeData/hugeData.js"></script>
+    <style>
+        table {
+            table-layout: fixed;
+            border: 1px solid #e4e4e4;
+            border-collapse: collapse
+        }
+        table th, table td {
+            border-right: 1px solid #e4e4e4;
+            border-bottom: 1px solid #e4e4e4;
+        }
+        table tbody {
+            display:block;
+            height:700px;
+            overflow-y:scroll;
+        }
+        table thead, table tbody tr {
+            display:table;
+            width: calc(100% - 1px);
+            table-layout:fixed;
+        }
+        table thead {
+            width: calc( 100% - 1em );
+            background: #51b9ec;
+        }
+        table thead th{ background:#e4e4e4;}
+
+    </style>
+
+    <!--
+        depends: [renderModel]
+        renderModel = {
+            colModel: [...],
+            colName: [...]
+        }
+    -->
+    <script id="gridTemplate" type="text/template">
+        <table>
+            <thead>
+                <tr>
+                    [% if (renderModel.rowNumber) { %]
+                    <td></td>
+                    [% } %]
+                    [% var colName = renderModel.colName; %]
+                    [% var colModel = renderModel.colModel; %]
+                    [% for (var key in colName) { %]
+                    <td data-name="[%= colModel[key].name %]">[%= colName[key] %]</td>
+                    [% } %]
+                </tr>
+            </thead>
+            <tbody>
+            <tr>
+                [% if (renderModel.rowNumber) { %]
+                <td></td>
+                [% } %]
+                [% colModel = renderModel.colModel; %]
+                [% for (var j in colModel) { %]
+                <td></td>
+                [% } %]
+            </tr>
+            </tbody>
+        </table>
+    </script>
+
+    <!--
+        depends: [rowDataList, renderModel]
+        renderPageModel: {
+            startIndex: {number},
+            endIndex: {number},
+            pageData: [...]
+        }
+    -->
+    <script id="gridDataTemplate" type="text/template">
+        [% var rowDataList =  renderPageModel.pageData; %]
+        [% for(var i = 0, length = rowDataList.length; i < length; i++) { %]
+            [% var rowData = rowDataList[i]; %]
+        <tr id="[%= rowData[renderModel.keyName] %]">
+            [% if (renderModel.rowNumber) { %]
+            <td>[%= renderPageModel.startIndex + i + 1%]</td>
+            [% } %]
+            [% colModel = renderModel.colModel; %]
+            [% for (var j in colModel) { %]
+            [%      var colName = colModel[j]["name"]; %]
+            <td data-name="[%= colName %]">[%= rowData[colName] %]</td>
+            [% } %]
+        </tr>
+        [% } %]
+    </script>
+</head>
+<body>
+<div id="grid" class="hotkey">
+
+</div>
+</body>
+</html>
