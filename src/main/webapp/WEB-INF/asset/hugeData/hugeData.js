@@ -13,7 +13,8 @@ $(function () {
             $("#grid").ouiGrid({
                 keyName: "assitCode",
                 colModel: colModel,
-                data: data
+                data: data,
+                rowNumber: true
             });
         }
     });

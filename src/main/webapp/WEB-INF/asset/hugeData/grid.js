@@ -79,7 +79,7 @@
          */
         _removeMoreThen2Page: function (renderPageModel, pageInfo) {
             var self = this, currentPage, pageDiff = 2,
-                pageSize, totalPage, allRecords, preScrollTop,
+                pageSize, totalPage, allRecords, $tbody, preScrollTop,
                 cachedPage, cachedPageKeys, removeElementHeight = 0,
                 before2PageEndIndex, before2PageEndRowId, $before2PageEndRowEle,
                 after2PageStartIndex, after2PageStartRowId, $after2PageStartRowEle;
@@ -95,8 +95,7 @@
                 ? renderPageModel.endIndex + (pageDiff - 1) * pageSize
                 : null;
 
-            preScrollTop = $("tbody").scrollTop();
-            log("scrollTop: " + $("tbody").scrollTop());
+
             // 1.删除当前页前两页的数据
             if (before2PageEndIndex != null && before2PageEndIndex >= 0) {
                 before2PageEndRowId = self.getRowIdByRowData(self.getRowDataByIndex(before2PageEndIndex));
@@ -106,7 +105,11 @@
                     removeElementHeight += $(this).outerHeight(true);
                 });
                 log("删除【序号%i】之前的数据，共删除%i个元素", before2PageEndIndex + 1, $preAll.length);
+                $tbody = $(self.getGridBody());
+                preScrollTop = $tbody.scrollTop();
                 $preAll.remove();
+                // 为了实现无缝滚动（为了往下翻页时不会出现抖动），重新设置scrollTop
+                $tbody.scrollTop(preScrollTop - removeElementHeight);
             }
 
             // 2.删除当前页后两页的数据
@@ -114,18 +117,10 @@
                 after2PageStartRowId = self.getRowIdByRowData(self.getRowDataByIndex(after2PageStartIndex));
                 $after2PageStartRowEle = $(self.getRowElementByRowId(after2PageStartRowId));
                 var $nextAll = $after2PageStartRowEle.nextAll();
-                $nextAll.each(function () {
-//                     removeElementHeight += $(this).outerHeight(true);
-                    // TODO FIX
-                    removeElementHeight = -100;
-                });
                 log("删除【序号%i】之后的数据，共删除%i个元素", after2PageStartIndex + 1, $nextAll.length);
                 $nextAll.remove();
             }
-            log("scrollTop2: " + $("tbody").scrollTop());
             log("removeElementHeight: " + removeElementHeight);
-            $("tbody").scrollTop(preScrollTop - removeElementHeight);
-            log("scrollTop3: " + $("tbody").scrollTop());
 
             cachedPage = pageInfo["cachedPage"];
             cachedPageKeys = Object.keys(pageInfo["cachedPage"]);
@@ -145,23 +140,36 @@
          * @private
          */
         _renderRowData: function (renderPageModel, referenceRowId, position) {
-            var self = this, $referenceElement, trHtml;
+            var self = this, $tbody, $referenceElement, trHtml, beforeScrollTop, addedHeight = 0;
 
             position || (position = "after");
             trHtml = templateUtil.getHTML("gridDataTemplate", {
                 renderPageModel: renderPageModel,
                 renderModel: self.getRenderModel()
             });
+            $tbody = $(self.getGridBody());
             $referenceElement = !referenceRowId
-                ? $("tbody", self.context)
+                ? $tbody
                 : $(self.getRowElementByRowId(referenceRowId));
 
             if (!referenceRowId) {
                 $referenceElement.append(trHtml);
+                $("tr:gt(0)", $referenceElement).each(function () {
+                    addedHeight += $(this).height();
+                });
             } else if (position === "after") {
                 $referenceElement.after(trHtml);
+                $referenceElement.nextAll().each(function () {
+                    addedHeight += $(this).height();
+                });
             } else {
+                beforeScrollTop = $tbody.scrollTop();
                 $referenceElement.before(trHtml);
+                // 为了实现无缝滚动（为了往上翻页时不会出现抖动），重新设置scrollTop
+                $referenceElement.prevAll().each(function () {
+                    addedHeight += $(this).height();
+                });
+                $tbody.scrollTop(beforeScrollTop + addedHeight);
             }
         },
 
@@ -339,7 +347,7 @@
          */
         bindEvent: function () {
             var self = this, context = self.context,
-                $grid = $(context), $tbody = $("tbody", $grid),
+                $grid = $(context), $tbody = $(self.getGridBody()),
                 lastScrollTop = 0;
 
             $tbody.off("scroll.gridPage")
@@ -423,6 +431,14 @@
         getCachedMaxPageNo: function (cachedPage) {
             var last = _.last(this.getCachedPageNumber(cachedPage))
             return last ? +last : null;
+        },
+
+        /**
+         * 获得表体元素
+         */
+        getGridBody: function () {
+            var $tbody = $("tbody", this.context);
+            return $tbody.length > 0 ? $tbody[0] : null;
         },
 
         /**
@@ -532,6 +548,104 @@
         }
     });
     Grid.prototype.init.prototype = Grid.prototype;
+
+    Grid.fmatter = {
+        
+    };
+    Grid.fmatter.util = {
+        /**
+         * Taken from YAHOO utils
+         * @param nData
+         * @param opts
+         * @returns {*}
+         * @constructor
+         */
+        NumberFormat: function (nData, opts) {
+            if (!$.isNumeric(nData)) {
+                nData *= 1;
+            }
+            if ($.isNumeric(nData)) {
+                var bNegative = (nData < 0);
+                var sOutput = String(nData);
+                var sDecimalSeparator = opts.decimalSeparator || ".";
+                var nDotIndex;
+                if ($.isNumeric(opts.decimalPlaces)) {
+                    // Round to the correct decimal place
+                    var nDecimalPlaces = opts.decimalPlaces;
+                    var nDecimal = Math.pow(10, nDecimalPlaces);
+                    sOutput = String(Math.round(nData * nDecimal) / nDecimal);
+                    nDotIndex = sOutput.lastIndexOf(".");
+                    if (nDecimalPlaces > 0) {
+                        // Add the decimal separator
+                        if (nDotIndex < 0) {
+                            sOutput += sDecimalSeparator;
+                            nDotIndex = sOutput.length - 1;
+                        }
+                        // Replace the "."
+                        else if (sDecimalSeparator !== ".") {
+                            sOutput = sOutput.replace(".", sDecimalSeparator);
+                        }
+                        // Add missing zeros
+                        while ((sOutput.length - 1 - nDotIndex) < nDecimalPlaces) {
+                            sOutput += "0";
+                        }
+                    }
+                }
+                if (opts.thousandsSeparator) {
+                    var sThousandsSeparator = opts.thousandsSeparator;
+                    nDotIndex = sOutput.lastIndexOf(sDecimalSeparator);
+                    nDotIndex = (nDotIndex > -1) ? nDotIndex : sOutput.length;
+                    var sNewOutput = sOutput.substring(nDotIndex);
+                    var nCount = -1, i;
+                    for (i = nDotIndex; i > 0; i--) {
+                        nCount++;
+                        if ((nCount % 3 === 0) && (i !== nDotIndex) && (!bNegative || (i > 1))) {
+                            sNewOutput = sThousandsSeparator + sNewOutput;
+                        }
+                        sNewOutput = sOutput.charAt(i - 1) + sNewOutput;
+                    }
+                    sOutput = sNewOutput;
+                }
+                // Prepend prefix
+                sOutput = (opts.prefix) ? opts.prefix + sOutput : sOutput;
+                // Append suffix
+                sOutput = (opts.suffix) ? sOutput + opts.suffix : sOutput;
+                return sOutput;
+
+            }
+            return nData;
+        }
+    };
+    $.extend(Grid.fmatter, {
+        /**
+         * e.g. colModel中使用举例如下
+         * formatter: "boolean", formatoptions: {trueValue: 1, falseValue: 0}}
+         */
+        boolean: function (cellVal, options/*, rowObject*/) {
+            var boolDefault = {trueValue: "是", falseValue: "否"},
+                formatoptions = options.colModel.formatoptions || {},
+                trueValue = formatoptions.trueValue || boolDefault.trueValue,
+                falseValue = formatoptions.falseValue || boolDefault.falseValue;
+
+            if (cellVal == null || $.trim(String(cellVal)) === "") {
+                return "&nbsp;";
+            }
+            return cellVal ? trueValue : falseValue;
+        },
+
+        /**
+         * e.g. colModel中使用举例如下
+         * formatter: "typeEnum", formatoptions: {typeEnum: {"1": "待处理", "2": "待审核", "3": "已审核"}}
+         */
+        typeEnum: function (cellVal, options/*, rowObject*/) {
+            var formatoptions = options.colModel.formatoptions,
+                typeEnum = formatoptions && formatoptions.typeEnum || {};
+
+            return typeEnum[cellVal] || "";
+        }
+
+    });
+
     
     $.fn.ouiGrid = function (pin) {
         if (typeof pin === 'string') {
@@ -561,6 +675,7 @@
     };
 
     $.fn.ouiGrid.defaults = {
-        rowNumber: true
+        rowNumber: true,
+        rowNumWidth: 30
     };
 })(jQuery);
