@@ -9,7 +9,7 @@ $(function () {
                 {name: "endAmt", label: "金额"}
             ];
 
-            var data = window["originData"]["records"].slice(0, 120);
+            var data = window["originData"]["records"];//.slice(0, 120);
             $("#grid").ouiGrid({
                 keyName: "assitCode",
                 colModel: colModel,

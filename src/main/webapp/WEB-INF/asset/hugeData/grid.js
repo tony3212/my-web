@@ -1,7 +1,20 @@
 (function ($) {
+    function log() {
+        console.log.apply(console, arguments);
+    }
+
+    function logGroup() {
+        console.group.apply(console, arguments);
+    }
+
+    function logGroupEnd() {
+        console.groupEnd.apply(console, arguments);
+    }
+
     var Grid = function (gridBox, option) {
         return new Grid.fn.init(gridBox, option);
     };
+
     Grid.fn = Grid.prototype = {
         constructor: Grid,
 
@@ -66,8 +79,8 @@
          */
         _removeMoreThen2Page: function (renderPageModel, pageInfo) {
             var self = this, currentPage, pageDiff = 2,
-                pageSize, totalPage, allRecords,
-                cachedPage, cachedPageKeys,
+                pageSize, totalPage, allRecords, preScrollTop,
+                cachedPage, cachedPageKeys, removeElementHeight = 0,
                 before2PageEndIndex, before2PageEndRowId, $before2PageEndRowEle,
                 after2PageStartIndex, after2PageStartRowId, $after2PageStartRowEle;
 
@@ -82,24 +95,37 @@
                 ? renderPageModel.endIndex + (pageDiff - 1) * pageSize
                 : null;
 
-            console.log("将要删除" + before2PageEndIndex + "前的数据" + "\t,将要删除" + after2PageStartIndex + "后的数据");
+            preScrollTop = $("tbody").scrollTop();
+            log("scrollTop: " + $("tbody").scrollTop());
             // 1.删除当前页前两页的数据
             if (before2PageEndIndex != null && before2PageEndIndex >= 0) {
                 before2PageEndRowId = self.getRowIdByRowData(self.getRowDataByIndex(before2PageEndIndex));
                 $before2PageEndRowEle = $(self.getRowElementByRowId(before2PageEndRowId));
-                var prev = $before2PageEndRowEle.prevAll();
-                console.log("remove before length:" + prev.length);
-                prev.remove();
+                var $preAll = $before2PageEndRowEle.prevAll();
+                $preAll.each(function () {
+                    removeElementHeight += $(this).outerHeight(true);
+                });
+                log("删除【序号%i】之前的数据，共删除%i个元素", before2PageEndIndex + 1, $preAll.length);
+                $preAll.remove();
             }
 
             // 2.删除当前页后两页的数据
             if (after2PageStartIndex != null && after2PageStartIndex <= allRecords.length) {
                 after2PageStartRowId = self.getRowIdByRowData(self.getRowDataByIndex(after2PageStartIndex));
                 $after2PageStartRowEle = $(self.getRowElementByRowId(after2PageStartRowId));
-                var next = $after2PageStartRowEle.nextAll();
-                console.log("remove before length:" + next.length);
-                next.remove();
+                var $nextAll = $after2PageStartRowEle.nextAll();
+                $nextAll.each(function () {
+//                     removeElementHeight += $(this).outerHeight(true);
+                    // TODO FIX
+                    removeElementHeight = -100;
+                });
+                log("删除【序号%i】之后的数据，共删除%i个元素", after2PageStartIndex + 1, $nextAll.length);
+                $nextAll.remove();
             }
+            log("scrollTop2: " + $("tbody").scrollTop());
+            log("removeElementHeight: " + removeElementHeight);
+            $("tbody").scrollTop(preScrollTop - removeElementHeight);
+            log("scrollTop3: " + $("tbody").scrollTop());
 
             cachedPage = pageInfo["cachedPage"];
             cachedPageKeys = Object.keys(pageInfo["cachedPage"]);
@@ -144,8 +170,7 @@
          * @private
          */
         _showBlock: function () {
-            console.group("*********loading page***********");
-            console.log("加载开始");
+            log("加载开始");
         },
 
         /**
@@ -153,8 +178,7 @@
          * @private
          */
         _hideBlock: function () {
-            console.log("加载完毕");
-            console.groupEnd();
+            log("加载完毕");
         }
     };
 
@@ -319,8 +343,8 @@
                 lastScrollTop = 0;
 
             $tbody.off("scroll.gridPage")
-                .on("scroll.gridPage", function () {
-                    var tBody = this, $tBody = $(tBody), scrollTop, reservedHeight = 0,
+                .on("scroll.gridPage", function (event) {
+                    var tBody = this, $tBody = $(tBody), scrollTop, reservedHeight = 150,
                         nearlyReachTop = false, nearlyReachBottom = false,
                         scrollHeight, scrollInnerHeight;
 
@@ -338,7 +362,7 @@
                         scrollInnerHeight = scrollTop + $tBody.innerHeight();
 
                         if (scrollHeight - scrollInnerHeight < 150) {
-                            console.log("attention");
+                            log("attention");
                         }
 
                         nearlyReachBottom = Boolean(scrollHeight - scrollInnerHeight >= 0 &&
@@ -355,13 +379,13 @@
             $grid
                 .off("gridReachTopAreaEvent")
                 .on("gridReachTopAreaEvent", function () {
-                    console.log("gridReachTopAreaEvent");
+                    log("gridReachTopAreaEvent");
                     self.loadPrevPage();
                 })
 
                 .off("gridReachBottomAreaEvent")
                 .on("gridReachBottomAreaEvent", function () {
-                    console.log("gridReachBottomAreaEvent");
+                    log("gridReachBottomAreaEvent");
                     self.loadNextPage();
                 });
 
@@ -411,6 +435,7 @@
                 renderPageModel, refRowId, position,
                 cachedPage, sortedCachedPageKeys;
 
+            logGroup("-----------------------开始加载第%i页数据------------------------", loadingPage);
             if (self.getConfig("loading")) {
                 return;
             }
@@ -422,7 +447,7 @@
 
             // 已经加载了数据，则直接返回
             if (cachedPage[loadingPage] != null) {
-                console.log("此页已缓存");
+                log("第%i页已缓存", loadingPage);
                 self._hideBlock();
                 return;
             }
@@ -430,7 +455,6 @@
             // 对缓存的页数按从小到大规则排序
             sortedCachedPageKeys = self.getCachedPageNumber(cachedPage);
 
-            console.log("正在加载第" + loadingPage + "页的数据");
             cachedPageSize = _.size(sortedCachedPageKeys)
             position = cachedPageSize > 0 && _.first(sortedCachedPageKeys) > loadingPage ? "before" : "after";
             refRowId = cachedPageSize === 0
@@ -439,12 +463,19 @@
                     ? self.getRowIdByRowData(self.getRowDataByIndex(cachedPage[self.getCachedMinPageNo(cachedPage)].startIndex))
                     : self.getRowIdByRowData(self.getRowDataByIndex(cachedPage[self.getCachedMaxPageNo(cachedPage)].endIndex));
             renderPageModel = self.getRenderPageModel(loadingPage);
+            log("第%i页的起始【序号%i】，结束【序号%i】，共%i条数据",
+                loadingPage,
+                renderPageModel.startIndex + 1,
+                renderPageModel.endIndex + 1,
+                renderPageModel.pageData.length
+            );
             $.extend(pageInfo["cachedPage"], _.object([loadingPage], [renderPageModel]));
             self._renderRowData(renderPageModel, refRowId, position);
             self._removeMoreThen2Page(renderPageModel, pageInfo);
-            self._hideBlock();
-            console.log("\t缓存的页面" + self.getCachedPageNumber());
+            log("缓存页面：" + self.getCachedPageNumber());
             self.extendConfig("loading", false);
+            self._hideBlock();
+            logGroupEnd("-----------------------------------------------");
         },
 
         /**
@@ -454,7 +485,7 @@
             var self = this, minPage = self.getCachedMinPageNo();
 
             if (minPage === 1) {
-                console.log("已是第一页");
+                log("已是第一页");
                 return;
             }
             self._loadPage(minPage - 1);
@@ -468,7 +499,7 @@
                 maxPage = self.getCachedMaxPageNo();
 
             if (maxPage === pageInfo.totalPage) {
-                console.log("已是最后一页");
+                log("已是最后一页");
                 return;
             }
             self._loadPage(maxPage + 1);
