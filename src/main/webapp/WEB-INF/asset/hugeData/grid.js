@@ -187,7 +187,7 @@
         /**
          * 获得格式化单元格的值，渲染单元格时使用
          * @param {object} cellModel 单元格的配置项
-         * @param {object} cellVal 单元格的值
+         * @param {*} cellVal 单元格的值
          * @param {object} rowData 行数据
          * @param {string} rowId 行id
          * @returns {string}
@@ -217,7 +217,7 @@
         /**
          * 获得单元格dom的属性，渲染单元格时使用
          * @param {object} cellModel 单元格的配置项
-         * @param {object} cellVal 单元格的值
+         * @param {*} cellVal 单元格的值
          * @param {object} rowData 行数据
          * @param {string} rowId 行id
          * @returns {string}
@@ -265,7 +265,7 @@
         /**
          * 获得单元格dom的class属性，渲染单元格时使用
          * @param {object} cellModel 单元格的配置项
-         * @param {object} cellVal 单元格的值
+         * @param {*} cellVal 单元格的值
          * @param {object} rowData 行数据
          * @param {string} rowId 行id
          * @returns {string}
@@ -295,7 +295,7 @@
         /**
          * 获得单元格dom的style属性，渲染单元格时使用
          * @param {object} cellModel 单元格的配置项
-         * @param {object} cellVal 单元格的值
+         * @param {*} cellVal 单元格的值
          * @param {object} rowData 行数据
          * @param {string} rowId 行id
          * @returns {string}
