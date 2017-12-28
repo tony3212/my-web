@@ -48,7 +48,7 @@
         context: null,
 
         _getStore: function (key) {
-            return this.store[key];
+            return key ? this.store[key] : this.store;
         },
 
         _setStore: function (key, value) {
@@ -145,7 +145,8 @@
             position || (position = "after");
             trHtml = templateUtil.getHTML("gridDataTemplate", {
                 renderPageModel: renderPageModel,
-                renderModel: self.getRenderModel()
+                renderModel: self.getRenderModel(),
+                gridInstance: self
             });
             $tbody = $(self.getGridBody());
             $referenceElement = !referenceRowId
@@ -154,14 +155,8 @@
 
             if (!referenceRowId) {
                 $referenceElement.append(trHtml);
-                $("tr:gt(0)", $referenceElement).each(function () {
-                    addedHeight += $(this).height();
-                });
             } else if (position === "after") {
                 $referenceElement.after(trHtml);
-                $referenceElement.nextAll().each(function () {
-                    addedHeight += $(this).height();
-                });
             } else {
                 beforeScrollTop = $tbody.scrollTop();
                 $referenceElement.before(trHtml);
@@ -187,6 +182,162 @@
          */
         _hideBlock: function () {
             log("加载完毕");
+        },
+
+        /**
+         * 获得格式化单元格的值，渲染单元格时使用
+         * @param {object} cellModel 单元格的配置项
+         * @param {object} cellVal 单元格的值
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        format: function (cellModel, cellVal, rowData, rowId) {
+            var self = this, opts, formatter;
+
+            opts = {rowId: rowId, colModel: cellModel, gid: $(this.context).attr("id")};
+
+            formatter = cellModel["formatter"];
+
+            if (!formatter) {
+                return cellVal;
+            }
+
+            if ($.isFunction(formatter)) {
+                return formatter.call(self, cellVal, opts, rowData);
+            }
+
+            if ($.type(formatter) === "string") {
+                return Grid.fmatter.format(formatter, cellVal, opts, rowData);
+            }
+
+            return cellVal;
+        },
+
+        /**
+         * 获得单元格dom的属性，渲染单元格时使用
+         * @param {object} cellModel 单元格的配置项
+         * @param {object} cellVal 单元格的值
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        cellAttr: function (cellModel, cellVal, rowData, rowId) {
+            var attrValue, opts, type, result;
+
+            attrValue = cellModel["cellAttr"];
+            type = $.type(attrValue);
+
+            if (type === "undefined") {
+                return "";
+            }
+
+            if (type === "string") {
+                return attrValue;
+            }
+
+            if (type === "function") {
+                opts = {rowId: rowId, colModel: cellModel, gid: $(this.context).attr("id")};
+                attrValue = attrValue.call(self, cellVal, opts, rowData, rowId);
+                if ($.type(attrValue) === "string") {
+                    return attrValue;
+                }
+                if ($.type(attrValue) === "object") {
+                    result = "";
+                    $.each(attrValue, function (key, value) {
+                        result += " " + key + "=" + value + " ";
+                    });
+                    return result;
+                }
+            }
+
+            if (type === "object") {
+                result = "";
+                $.each(attrValue, function (key, value) {
+                    result += " " + key + "=" + value + " ";
+                });
+                return result;
+            }
+
+            return "";
+        },
+
+        /**
+         * 获得单元格dom的class属性，渲染单元格时使用
+         * @param {object} cellModel 单元格的配置项
+         * @param {object} cellVal 单元格的值
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        cellClass: function (cellModel, cellVal, rowData, rowId) {
+            var classValue, opts, type;
+
+            classValue = cellModel["cellClass"];
+            type = $.type(classValue);
+
+            if (type === "undefined") {
+                return "";
+            }
+
+            if (type === "string") {
+                return classValue;
+            }
+
+            if (type === "function") {
+                opts = {rowId: rowId, colModel: cellModel, gid: $(this.context).attr("id")};
+                return classValue.call(self, cellVal, opts, rowData, rowId);
+            }
+
+            return "";
+        },
+
+        /**
+         * 获得单元格dom的style属性，渲染单元格时使用
+         * @param {object} cellModel 单元格的配置项
+         * @param {object} cellVal 单元格的值
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        cellStyle: function (cellModel, cellVal, rowData, rowId) {
+            var styleValue, opts, type, result;
+
+            styleValue = cellModel["cellStyle"];
+            type = $.type(styleValue);
+
+            if (type === "undefined") {
+                return "";
+            }
+
+            if (type === "string") {
+                return styleValue;
+            }
+
+            if (type === "function") {
+                opts = {rowId: rowId, colModel: cellModel, gid: $(this.context).attr("id")};
+                styleValue = styleValue.call(self, cellVal, opts, rowData, rowId);
+                if ($.type(styleValue) === "string") {
+                    return styleValue;
+                }
+                if ($.type(styleValue) === "object") {
+                    result = "";
+                    $.each(styleValue, function (key, value) {
+                        result += " " + key + ":" + value + "; ";
+                    });
+                    return result;
+                }
+            }
+
+            if (type === "object") {
+                result = "";
+                $.each(styleValue, function (key, value) {
+                    result += " " + key + ":" + value + "; ";
+                });
+                return result;
+            }
+
+            return "";
         }
     };
 
@@ -297,6 +448,15 @@
          * 初始化
          * @param gridBox
          * @param option
+         * @param {
+         *      {name: {string},
+         *      label: {string},
+         *      formatter: {string | function},
+         *      formatoptions: {object},
+         *      cellStyle: {? object | function},
+         *      cellClass: {? string | function},
+         *      cellAttr: {? string | object | function}
+         *  } option.colModel
          */
         init: function (gridBox, option) {
             var self = this, config = self.store.config, rowDataList, dataMap, colModel, colName, renderModel;
@@ -550,7 +710,51 @@
     Grid.prototype.init.prototype = Grid.prototype;
 
     Grid.fmatter = {
-        
+        isBoolean: function (o) {
+            return typeof o === "boolean";
+        },
+        isObject: function (o) {
+            return (o && (typeof o === "object" || $.isFunction(o))) || false;
+        },
+        isString: function (o) {
+            return typeof o === "string";
+        },
+        isNumber: function (o) {
+            return typeof o === "number" && isFinite(o);
+        },
+        isValue: function (o) {
+            return (this.isObject(o) || this.isString(o) || this.isNumber(o) || this.isBoolean(o));
+        },
+        isEmpty: function (o) {
+            if (!this.isString(o) && this.isValue(o)) {
+                return false;
+            }
+            if (!this.isValue(o)) {
+                return true;
+            }
+            o = $.trim(o).replace(/&nbsp;/ig, "").replace(/&#160;/ig, "");
+            return o === "";
+        },
+
+        /**
+         * 格式化
+         * @param formatType
+         * @param cellVal
+         * @param options
+         * @param rowData
+         * @returns {*}
+         */
+        format: function (formatType, cellVal, options, rowData) {
+            var v = cellVal;
+
+            options = $.extend({}, Grid.fmatter.defaults, options);
+            try {
+                v = Grid.fmatter[formatType].call(this, cellVal, options, rowData);
+            } catch (fe) {
+                log(fe);
+            }
+            return v;
+        }
     };
     Grid.fmatter.util = {
         /**
@@ -617,22 +821,43 @@
         }
     };
     $.extend(Grid.fmatter, {
-        /**
-         * e.g. colModel中使用举例如下
-         * formatter: "boolean", formatoptions: {trueValue: 1, falseValue: 0}}
-         */
-        boolean: function (cellVal, options/*, rowObject*/) {
-            var boolDefault = {trueValue: "是", falseValue: "否"},
-                formatoptions = options.colModel.formatoptions || {},
-                trueValue = formatoptions.trueValue || boolDefault.trueValue,
-                falseValue = formatoptions.falseValue || boolDefault.falseValue;
-
-            if (cellVal == null || $.trim(String(cellVal)) === "") {
-                return "&nbsp;";
-            }
-            return cellVal ? trueValue : falseValue;
+        defaultFormat: function (cellVal, opts) {
+            return (Grid.fmatter.isValue(cellVal) && cellVal !== "") ? cellVal : opts.defaultValue || "&#160;";
         },
 
+        integer: function (cellVal, opts) {
+            var op = $.extend({}, opts.integer);
+            if (opts.colModel !== undefined && opts.colModel.formatoptions !== undefined) {
+                op = $.extend({}, op, opts.colModel.formatoptions);
+            }
+            if (Grid.fmatter.isEmpty(cellVal)) {
+                return op.defaultValue;
+            }
+            return Grid.fmatter.util.NumberFormat(cellVal, op);
+        },
+        
+        number: function (cellVal, opts) {
+            var op = $.extend({}, opts.number);
+            if (opts.colModel !== undefined && opts.colModel.formatoptions !== undefined) {
+                op = $.extend({}, op, opts.colModel.formatoptions);
+            }
+            if (Grid.fmatter.isEmpty(cellVal)) {
+                return op.defaultValue;
+            }
+            return Grid.fmatter.util.NumberFormat(cellVal, op);
+        },
+        
+        currency: function (cellVal, opts) {
+            var op = $.extend({}, opts.currency);
+            if (opts.colModel !== undefined && opts.colModel.formatoptions !== undefined) {
+                op = $.extend({}, op, opts.colModel.formatoptions);
+            }
+            if (Grid.fmatter.isEmpty(cellVal)) {
+                return op.defaultValue;
+            }
+            return Grid.fmatter.util.NumberFormat(cellVal, op);
+        },
+        
         /**
          * e.g. colModel中使用举例如下
          * formatter: "typeEnum", formatoptions: {typeEnum: {"1": "待处理", "2": "待审核", "3": "已审核"}}
@@ -641,14 +866,14 @@
             var formatoptions = options.colModel.formatoptions,
                 typeEnum = formatoptions && formatoptions.typeEnum || {};
 
-            return typeEnum[cellVal] || "";
+            return typeEnum[cellVal] || "&#160;";
         }
 
     });
 
     
-    $.fn.ouiGrid = function (pin) {
-        if (typeof pin === 'string') {
+   $.fn.ouiGrid = function (pin) {
+        if (typeof pin === "string") {
             var fn, args, noReturnValue = void 0, returnValue = void 0;
 
             args = $.makeArray(arguments).slice(1);
@@ -672,10 +897,23 @@
 
             $(this).data("gridInstance", gridInstance);
         });
-    };
+   };
 
-    $.fn.ouiGrid.defaults = {
+    Grid.defaults = $.fn.ouiGrid.defaults = {
         rowNumber: true,
         rowNumWidth: 30
+    };
+
+    Grid.fmatter.defaults = $.fn.ouiGrid.fmatter = {
+        integer: {thousandsSeparator: "", defaultValue: "0"},
+        number: {decimalSeparator: ",", thousandsSeparator: "", decimalPlaces: 2, defaultValue: "0.00"},
+        currency: {
+            decimalSeparator: ".",
+            thousandsSeparator: ",",
+            decimalPlaces: 2,
+            prefix: "",
+            suffix: "",
+            defaultValue: "0.00"
+        }
     };
 })(jQuery);

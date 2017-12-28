@@ -78,12 +78,14 @@
             startIndex: {number},
             endIndex: {number},
             pageData: [...]
-        }
+        },
+        gridInstance: {{object}}}
     -->
     <script id="gridDataTemplate" type="text/template">
         [% var rowDataList =  renderPageModel.pageData; %]
         [% for(var i = 0, length = rowDataList.length; i < length; i++) { %]
             [% var rowData = rowDataList[i]; %]
+            [% var rowId = rowData[renderModel.keyName]; %]
         <tr id="[%= rowData[renderModel.keyName] %]">
             [% if (renderModel.rowNumber) { %]
             <td>[%= renderPageModel.startIndex + i + 1%]</td>
@@ -91,7 +93,19 @@
             [% colModel = renderModel.colModel; %]
             [% for (var j in colModel) { %]
             [%      var colName = colModel[j]["name"]; %]
-            <td data-name="[%= colName %]">[%= rowData[colName] %]</td>
+            [%      var cellModel = colModel[j]; %]
+            [%      var cellValue = rowData[colName]; %]
+            [%      var cellAttr = gridInstance.cellAttr(cellModel, cellValue, rowData, rowId); %]
+            [%      var cellClass = gridInstance.cellClass(cellModel, cellValue, rowData, rowId); %]
+            [%      var cellStyle = gridInstance.cellStyle(cellModel, cellValue, rowData, rowId); %]
+            [%      var cellFormatValue = gridInstance.format(cellModel, cellValue, rowData, rowId); %]
+            <td data-name="[%= colName %]"
+                [%= cellAttr %]
+                [%= cellClass ? ('class="' + cellClass + '"') : '' %]
+                [%= cellStyle ? ('style="' + cellStyle + '"') : '' %]
+            >
+                [%= cellFormatValue %]
+            </td>
             [% } %]
         </tr>
         [% } %]
