@@ -13,7 +13,8 @@ $(function () {
                         };
                     },
                     cellStyle: {
-                        "font-size": "20px"
+                        "color": "red",
+                        "font-weight": "bold"
                     },
                     cellClass: function () {
                         return "right";
