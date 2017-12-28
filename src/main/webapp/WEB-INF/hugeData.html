@@ -84,9 +84,18 @@
     <script id="gridDataTemplate" type="text/template">
         [% var rowDataList =  renderPageModel.pageData; %]
         [% for(var i = 0, length = rowDataList.length; i < length; i++) { %]
+
             [% var rowData = rowDataList[i]; %]
             [% var rowId = rowData[renderModel.keyName]; %]
-        <tr id="[%= rowData[renderModel.keyName] %]">
+            [% var rowAttr = gridInstance.rowAttr(rowData, rowId); %]
+            [% var rowClass = gridInstance.rowClass(rowData, rowId); %]
+            [% var rowStyle = gridInstance.rowStyle(rowData, rowId); %]
+
+        <tr id="[%= rowData[renderModel.keyName] %]"
+            [%= rowAttr %]
+            [%= rowClass ? ('class="' + rowClass + '"') : '' %]
+            [%= rowStyle ? ('style="' + rowStyle + '"') : '' %]
+        >
             [% if (renderModel.rowNumber) { %]
             <td>[%= renderPageModel.startIndex + i + 1%]</td>
             [% } %]

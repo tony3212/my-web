@@ -38,7 +38,20 @@ $(function () {
                 keyName: "assitCode",
                 colModel: colModel,
                 data: data,
-                rowNumber: true
+                rowNumber: true,
+                rowAttr: function (rowData, rowId, options) {
+                    return {
+                        "data-row-name": rowId
+                    };
+                },
+                rowClass: function (rowData, rowId, options) {
+                   return "grid-row-" + rowId;
+                },
+                rowStyle: function (rowData, rowId, options) {
+                    return {
+                        "background-color": "red"
+                    };
+                }
             });
         }
     });

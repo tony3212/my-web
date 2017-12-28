@@ -1,3 +1,22 @@
+/**
+ * @type {object} colModel 列配置项
+ * @property {string} colModel.name 列的字段名
+ * @property {string} colModel.label 列的展示名称
+ * @property {string | function} colModel.formatter 显示值格式器
+ * @property {? object} colModel.formatoptions 格式配置项
+ * @property {? object | function} colModel.cellStyle 单元格样式
+ * @property {? string | function} colModel.cellClass 单元格class
+ * @property {? string | object | function} colModel.cellAttr 单元格属性
+ *
+ * @type {object} option 初始化时的配置项
+ * @property {string} option.keyName 主键的字段名
+ * @property {colModel[]} option.colModel 每列列定义
+ * @property {object[]} option.data 要展示的数据
+ * @property {boolean} option.rowNumber 是否展示序列号
+ * @property {string | object | function} option.rowAttr 行dom的属性
+ * @property {string | object | function} option.rowClass 行dom的class
+ * @property {string | object | function} option.rowStyle 行dom的style
+ */
 (function ($) {
     function log() {
         console.log.apply(console, arguments);
@@ -186,7 +205,7 @@
 
         /**
          * 获得格式化单元格的值，渲染单元格时使用
-         * @param {object} cellModel 单元格的配置项
+         * @param {colModel} cellModel 单元格的配置项
          * @param {*} cellVal 单元格的值
          * @param {object} rowData 行数据
          * @param {string} rowId 行id
@@ -215,8 +234,8 @@
         },
 
         /**
-         * 获得单元格dom的属性，渲染单元格时使用
-         * @param {object} cellModel 单元格的配置项
+         * 获得单元格dom的自定义属性，渲染单元格时使用
+         * @param {colModel} cellModel 单元格的配置项
          * @param {*} cellVal 单元格的值
          * @param {object} rowData 行数据
          * @param {string} rowId 行id
@@ -264,7 +283,7 @@
 
         /**
          * 获得单元格dom的class属性，渲染单元格时使用
-         * @param {object} cellModel 单元格的配置项
+         * @param {colModel} cellModel 单元格的配置项
          * @param {*} cellVal 单元格的值
          * @param {object} rowData 行数据
          * @param {string} rowId 行id
@@ -294,7 +313,7 @@
 
         /**
          * 获得单元格dom的style属性，渲染单元格时使用
-         * @param {object} cellModel 单元格的配置项
+         * @param {colModel} cellModel 单元格的配置项
          * @param {*} cellVal 单元格的值
          * @param {object} rowData 行数据
          * @param {string} rowId 行id
@@ -338,14 +357,142 @@
             }
 
             return "";
+        },
+
+        /**
+         * 获得grid行的自定义属性，渲染单元格时使用
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        rowAttr: function (rowData, rowId) {
+            var self = this, attrValue, opts, type, result;
+
+            attrValue = self.getConfig("rowAttr");
+            type = $.type(attrValue);
+
+            if (type === "undefined") {
+                return "";
+            }
+
+            if (type === "string") {
+                return attrValue;
+            }
+
+            if (type === "function") {
+                opts = {rowId: rowId, gid: $(this.context).attr("id")};
+                attrValue = attrValue.call(self, rowData, rowId, opts);
+                if ($.type(attrValue) === "string") {
+                    return attrValue;
+                }
+                if ($.type(attrValue) === "object") {
+                    result = "";
+                    $.each(attrValue, function (key, value) {
+                        result += " " + key + "=" + value + " ";
+                    });
+                    return result;
+                }
+            }
+
+            if (type === "object") {
+                result = "";
+                $.each(attrValue, function (key, value) {
+                    result += " " + key + "=" + value + " ";
+                });
+                return result;
+            }
+
+            return "";
+        },
+
+        /**
+         * 获得grid行的的class值，渲染单元格时使用
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        rowClass: function (rowData, rowId) {
+            var self = this, classValue, opts, type;
+
+            classValue = self.getConfig("rowClass");
+            type = $.type(classValue);
+
+            if (type === "undefined") {
+                return "";
+            }
+
+            if (type === "string") {
+                return classValue;
+            }
+
+            if (type === "function") {
+                opts = {rowId: rowId, gid: $(this.context).attr("id")};
+                return classValue.call(self, rowData, rowId, opts);
+            }
+
+            return "";
+        },
+
+        /**
+         * 获得grid行的的style属性，渲染单元格时使用
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        rowStyle: function (rowData, rowId) {
+            var self = this, styleValue, opts, type, result;
+
+            styleValue = self.getConfig("rowStyle");
+            type = $.type(styleValue);
+
+            if (type === "undefined") {
+                return "";
+            }
+
+            if (type === "string") {
+                return styleValue;
+            }
+
+            if (type === "function") {
+                opts = {rowId: rowId, gid: $(this.context).attr("id")};
+                styleValue = styleValue.call(self, rowData, rowId, opts);
+                if ($.type(styleValue) === "string") {
+                    return styleValue;
+                }
+                if ($.type(styleValue) === "object") {
+                    result = "";
+                    $.each(styleValue, function (key, value) {
+                        result += " " + key + ":" + value + "; ";
+                    });
+                    return result;
+                }
+            }
+
+            if (type === "object") {
+                result = "";
+                $.each(styleValue, function (key, value) {
+                    result += " " + key + ":" + value + "; ";
+                });
+                return result;
+            }
+
+            return "";
         }
     };
 
     $.extend(Grid.prototype, {
+        /**
+         * 获取配置项
+         * @returns {option}
+         */
         getOption: function () {
             return this._getStore("option");
         },
 
+        /**
+         * 设置配置项
+         * @param {option} option
+         */
         setOption: function (option) {
             this._setStore("option", option);
         },
@@ -447,16 +594,7 @@
         /**
          * 初始化
          * @param gridBox
-         * @param option
-         * @param {
-         *      {name: {string},
-         *      label: {string},
-         *      formatter: {string | function},
-         *      formatoptions: {object},
-         *      cellStyle: {? object | function},
-         *      cellClass: {? string | function},
-         *      cellAttr: {? string | object | function}
-         *  } option.colModel
+         * @param {option} option
          */
         init: function (gridBox, option) {
             var self = this, config = self.store.config, rowDataList, dataMap, colModel, colName, renderModel;
@@ -466,16 +604,16 @@
             self.setOption(option);
 
             // 2.初始化相关数据
-            colModel = option["colModel"];
+            colModel = option.colModel;
             colName = _.pluck(colModel, "label");
             renderModel = {
-                keyName: option["keyName"],
+                keyName: option.keyName,
                 colModel: colModel,
                 colName: colName,
-                rowNumber: option["rowNumber"]
+                rowNumber: option.rowNumber
             };
-            rowDataList = $.extend(true, [], option["data"]);
-            dataMap = _.indexBy(rowDataList, option["keyName"]);
+            rowDataList = $.extend(true, [], option.data);
+            dataMap = _.indexBy(rowDataList, option.keyName);
             config = $.extend(true, {}, config, option, {renderModel: renderModel, dataMap: dataMap});
             self.setConfig(config);
 
@@ -871,8 +1009,13 @@
 
     });
 
-    
-   $.fn.ouiGrid = function (pin) {
+
+    /**
+     * 初始化ouiGrid或者调用ouiGrid方法
+     * @param {string | option}pin
+     * @returns {*}
+     */
+    $.fn.ouiGrid = function (pin) {
         if (typeof pin === "string") {
             var fn, args, noReturnValue = void 0, returnValue = void 0;
 
