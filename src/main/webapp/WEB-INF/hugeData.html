@@ -21,7 +21,6 @@
         }
         table tbody {
             display:block;
-            height:700px;
             overflow-y:scroll;
         }
         table thead, table tbody tr {
@@ -38,11 +37,12 @@
     </style>
 
     <!--
-        depends: [renderModel]
+        depends: [renderModel, gridInstance]
         renderModel = {
             colModel: [...],
             colName: [...]
         }
+        gridInstance: {object}
     -->
     <script id="gridTemplate" type="text/template">
         <table>
@@ -58,7 +58,10 @@
                     [% } %]
                 </tr>
             </thead>
-            <tbody>
+
+            [% var bodyClass = gridInstance.bodyClass(renderModel); %]
+            [% var bodyStyle = gridInstance.bodyStyle(renderModel); %]
+            <tbody class="[%= bodyClass %]" style="[%= bodyStyle %]">
             <tr>
                 [% if (renderModel.rowNumber) { %]
                 <td></td>
@@ -73,7 +76,7 @@
     </script>
 
     <!--
-        depends: [rowDataList, renderModel]
+        depends: [rowDataList, renderModel, gridInstance]
         renderPageModel: {
             startIndex: {number},
             endIndex: {number},
@@ -93,8 +96,8 @@
 
         <tr id="[%= rowData[renderModel.keyName] %]"
             [%= rowAttr %]
-            [%= rowClass ? ('class="' + rowClass + '"') : '' %]
-            [%= rowStyle ? ('style="' + rowStyle + '"') : '' %]
+            class="[%= rowClass %]"
+            style="[%= rowStyle %]"
         >
             [% if (renderModel.rowNumber) { %]
             <td>[%= renderPageModel.startIndex + i + 1%]</td>
@@ -110,8 +113,8 @@
             [%      var cellFormatValue = gridInstance.format(cellModel, cellValue, rowData, rowId); %]
             <td data-name="[%= colName %]"
                 [%= cellAttr %]
-                [%= cellClass ? ('class="' + cellClass + '"') : '' %]
-                [%= cellStyle ? ('style="' + cellStyle + '"') : '' %]
+                class="[%= cellClass %]"
+                style="[%= cellStyle %]"
             >
                 [%= cellFormatValue %]
             </td>

@@ -14,21 +14,67 @@
  * @property {colModel[]} option.colModel 每列列定义
  * @property {object[]} option.data 要展示的数据
  * @property {boolean} option.rowNumber 是否展示序列号
+ * @property {string} option.height grid的body的高度
+ * @property {string | integer} 表格高度
  * @property {string | object | function} option.rowAttr 行dom的属性
  * @property {string | object | function} option.rowClass 行dom的class
  * @property {string | object | function} option.rowStyle 行dom的style
  */
 (function ($) {
     function log() {
-        console.log.apply(console, arguments);
+        console && console.log && console.log.apply(console, arguments);
     }
 
     function logGroup() {
-        console.group.apply(console, arguments);
+        console && console.group && console.group.apply(console, arguments);
     }
 
     function logGroupEnd() {
-        console.groupEnd.apply(console, arguments);
+        console && console.groupEnd && console.groupEnd.apply(console, arguments);
+    }
+
+    /**
+     * 将dom的属性对象转成dom显示的字符串
+     * @example {name: "name", value:"1"} => name="name" value="1"
+     * @param attrObject
+     * @returns {string}
+     */
+    function attrObject2String(attrObject) {
+        var result = "";
+        $.each(attrObject, function (key, value) {
+            result += " " + key + "=" + value + " ";
+        });
+        return result;
+    }
+
+    /**
+     * 将dom的style对象转成dom的style字符串
+     * @example {"text-align": "left", font-size="14px"} => text-align="left"; font-size="14px";
+     * @param styleObject
+     * @returns {string}
+     */
+    function styleObject2String(styleObject) {
+        var result = "";
+        $.each(styleObject, function (key, value) {
+            result += key + ":" + value + "; ";
+        });
+        return result;
+    }
+
+    /**
+     * 联结字符中
+     * @example joinStr('abc', '456') => 'abc456'
+     */
+    function joinStr() {
+        return $.makeArray(arguments).join("");
+    }
+
+    /**
+     * 联结字符串
+     * @example joinStr('abc', '456') => 'abc 456'
+     */
+    function joinClass() {
+        return $.makeArray(arguments).join(" ");
     }
 
     var Grid = function (gridBox, option) {
@@ -143,7 +189,7 @@
             log("removeElementHeight: " + removeElementHeight);
 
             cachedPage = pageInfo["cachedPage"];
-            cachedPageKeys = Object.keys(pageInfo["cachedPage"]);
+            cachedPageKeys = _.keys(pageInfo["cachedPage"]);
             // 3.删除不要的缓存数据
             $.each(cachedPageKeys, function (index, page) {
                 if (Math.abs(currentPage - page) >= pageDiff) {
@@ -214,7 +260,7 @@
                 var align = cellModel.align, formatter = cellModel.formatter;
 
                 // 处理对齐方式
-                if ( align === undefined) {
+                if (align === undefined) {
                     if (formatter === undefined) {
                         cellModel.align = "left";
                     } else if (formatter === "number" || formatter === "integer" || formatter === "currency") {
@@ -238,11 +284,7 @@
          * @private
          */
         _predefineCellClass: function (cellModel, cellVal, rowData, rowId) {
-            var classArray = [];
-
-            classArray.push("grid-cell");
-
-            return classArray.join(" ");
+            return joinClass("grid-cell");
         },
 
         /**
@@ -255,11 +297,7 @@
          * @private
          */
         _predefineCellStyle: function (cellModel, cellVal, rowData, rowId) {
-            var classArray = [];
-
-            classArray.push("text-align" + ":" + cellModel.align + ";");
-
-            return classArray.join("");
+            return joinStr(styleObject2String({"text-align" : cellModel.align}));
         },
 
         /**
@@ -279,6 +317,258 @@
          */
         _predefineRowStyle: function (rowData, rowId) {
             return "background: yellow;";
+        },
+
+        /**
+         * 获得预定义的grid的body的class样式
+         * @private
+         */
+        _predefineBodyClass: function () {
+            return "grid-body";
+
+        },
+
+        /**
+         * 获得预定义的grid的body的style样式
+         * @private
+         */
+        _predefineBodyStyle: function (renderModel) {
+            return styleObject2String({height: renderModel.height});
+        },
+
+
+        /**
+         * 获得body的class的样式，渲染时使用
+         * @returns {*|string}
+         */
+        bodyClass: function (renderModel) {
+            return this._predefineBodyClass(renderModel);
+        },
+
+        /**
+         * 获得body的style的样式，渲染时使用
+         * @returns {*|string}
+         */
+        bodyStyle: function (renderModel) {
+            return this._predefineBodyStyle(renderModel);
+        },
+
+        /**
+         * 获得单元格dom的自定义属性，渲染单元格时使用
+         * @param {colModel} cellModel 单元格的配置项
+         * @param {*} cellVal 单元格的值
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        cellAttr: function (cellModel, cellVal, rowData, rowId) {
+            var attrValue, opts, type;
+
+            attrValue = cellModel["cellAttr"];
+            type = $.type(attrValue);
+
+            if (type === "undefined") {
+                return "";
+            }
+
+            if (type === "string") {
+                return attrValue;
+            }
+
+            if (type === "function") {
+                opts = {rowId: rowId, colModel: cellModel, gid: $(this.context).attr("id")};
+                attrValue = attrValue.call(self, cellVal, opts, rowData, rowId);
+                if ($.type(attrValue) === "string") {
+                    return attrValue;
+                }
+                if ($.type(attrValue) === "object") {
+                    return attrObject2String(attrValue);
+                }
+            }
+
+            if (type === "object") {
+                return attrObject2String(attrValue);
+            }
+
+            return "";
+        },
+
+        /**
+         * 获得单元格dom的class属性，渲染单元格时使用
+         * @param {colModel} cellModel 单元格的配置项
+         * @param {*} cellVal 单元格的值
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        cellClass: function (cellModel, cellVal, rowData, rowId) {
+            var self = this, classValue, opts, type, predefineCellClass;
+
+            predefineCellClass = self._predefineCellClass(cellModel, cellVal, rowData, rowId);
+            classValue = cellModel["cellClass"];
+            type = $.type(classValue);
+
+            if (type === "undefined") {
+                return predefineCellClass;
+            }
+
+            if (type === "string") {
+                return joinClass(predefineCellClass, classValue);
+            }
+
+            if (type === "function") {
+                opts = {rowId: rowId, colModel: cellModel, gid: $(this.context).attr("id")};
+                return joinClass(predefineCellClass, classValue.call(self, cellVal, opts, rowData, rowId));
+            }
+
+            return predefineCellClass;
+        },
+
+        /**
+         * 获得单元格dom的style属性，渲染单元格时使用
+         * @param {colModel} cellModel 单元格的配置项
+         * @param {*} cellVal 单元格的值
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        cellStyle: function (cellModel, cellVal, rowData, rowId) {
+            var self = this, styleValue, opts, type, predefineCellStyle;
+
+            predefineCellStyle = self._predefineCellStyle(cellModel, cellVal, rowData, rowId);
+            styleValue = cellModel["cellStyle"];
+            type = $.type(styleValue);
+
+            if (type === "undefined") {
+                return predefineCellStyle;
+            }
+
+            if (type === "string") {
+                return joinStr(predefineCellStyle, predefineCellStyle);
+            }
+
+            if (type === "function") {
+                opts = {rowId: rowId, colModel: cellModel, gid: $(this.context).attr("id")};
+                styleValue = styleValue.call(self, cellVal, opts, rowData, rowId);
+                if ($.type(styleValue) === "string") {
+                    return joinStr(predefineCellStyle, styleValue);
+                }
+                if ($.type(styleValue) === "object") {
+                    return joinStr(predefineCellStyle, styleObject2String(styleValue));
+                }
+            }
+
+            if (type === "object") {
+                return joinStr(predefineCellStyle, styleObject2String(styleValue));
+            }
+
+            return predefineCellStyle;
+        },
+
+        /**
+         * 获得grid行的自定义属性，渲染单元格时使用
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        rowAttr: function (rowData, rowId) {
+            var self = this, attrValue, opts, type;
+
+            attrValue = self.getConfig("rowAttr");
+            type = $.type(attrValue);
+
+            if (type === "undefined") {
+                return "";
+            }
+
+            if (type === "string") {
+                return attrValue;
+            }
+
+            if (type === "function") {
+                opts = {rowId: rowId, gid: $(this.context).attr("id")};
+                attrValue = attrValue.call(self, rowData, rowId, opts);
+                if ($.type(attrValue) === "string") {
+                    return attrValue;
+                }
+                if ($.type(attrValue) === "object") {
+                    return attrObject2String(attrValue);
+                }
+            }
+
+            if (type === "object") {
+                return attrObject2String(attrValue);
+            }
+
+            return "";
+        },
+
+        /**
+         * 获得grid行的的class值，渲染单元格时使用
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        rowClass: function (rowData, rowId) {
+            var self = this, classValue, opts, type, predefineRowClass;
+
+            predefineRowClass = self._predefineRowClass(rowData, rowId)
+            classValue = self.getConfig("rowClass");
+            type = $.type(classValue);
+
+            if (type === "undefined") {
+                return predefineRowClass;
+            }
+
+            if (type === "string") {
+                return joinClass(predefineRowClass, classValue);
+            }
+
+            if (type === "function") {
+                opts = {rowId: rowId, gid: $(this.context).attr("id")};
+                return joinClass(predefineRowClass, classValue.call(self, rowData, rowId, opts));
+            }
+
+            return predefineRowClass;
+        },
+
+        /**
+         * 获得grid行的的style属性，渲染单元格时使用
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         */
+        rowStyle: function (rowData, rowId) {
+            var self = this, styleValue, opts, type, predefineRowStyle;
+
+            predefineRowStyle = self._predefineRowStyle(rowData, rowId)
+            styleValue = self.getConfig("rowStyle");
+            type = $.type(styleValue);
+
+            if (type === "undefined") {
+                return predefineRowStyle;
+            }
+
+            if (type === "string") {
+                return joinStr(predefineRowStyle, styleValue);
+            }
+
+            if (type === "function") {
+                opts = {rowId: rowId, gid: $(this.context).attr("id")};
+                styleValue = styleValue.call(self, rowData, rowId, opts);
+                if ($.type(styleValue) === "string") {
+                    return joinStr(predefineRowStyle, styleValue);
+                }
+                if ($.type(styleValue) === "object") {
+                    return joinStr(predefineRowStyle, styleObject2String(styleValue));
+                }
+            }
+
+            if (type === "object") {
+                return joinStr(predefineRowStyle, styleObject2String(styleValue));
+            }
+
+            return predefineRowStyle;
         },
 
         /**
@@ -310,256 +600,6 @@
 
             return cellVal;
         },
-
-        /**
-         * 获得单元格dom的自定义属性，渲染单元格时使用
-         * @param {colModel} cellModel 单元格的配置项
-         * @param {*} cellVal 单元格的值
-         * @param {object} rowData 行数据
-         * @param {string} rowId 行id
-         * @returns {string}
-         */
-        cellAttr: function (cellModel, cellVal, rowData, rowId) {
-            var attrValue, opts, type, result;
-
-            attrValue = cellModel["cellAttr"];
-            type = $.type(attrValue);
-
-            if (type === "undefined") {
-                return "";
-            }
-
-            if (type === "string") {
-                return attrValue;
-            }
-
-            if (type === "function") {
-                opts = {rowId: rowId, colModel: cellModel, gid: $(this.context).attr("id")};
-                attrValue = attrValue.call(self, cellVal, opts, rowData, rowId);
-                if ($.type(attrValue) === "string") {
-                    return attrValue;
-                }
-                if ($.type(attrValue) === "object") {
-                    result = "";
-                    $.each(attrValue, function (key, value) {
-                        result += " " + key + "=" + value + " ";
-                    });
-                    return result;
-                }
-            }
-
-            if (type === "object") {
-                result = "";
-                $.each(attrValue, function (key, value) {
-                    result += " " + key + "=" + value + " ";
-                });
-                return result;
-            }
-
-            return "";
-        },
-
-        /**
-         * 获得单元格dom的class属性，渲染单元格时使用
-         * @param {colModel} cellModel 单元格的配置项
-         * @param {*} cellVal 单元格的值
-         * @param {object} rowData 行数据
-         * @param {string} rowId 行id
-         * @returns {string}
-         */
-        cellClass: function (cellModel, cellVal, rowData, rowId) {
-            var self = this, classValue, opts, type, predefineCellClass;
-
-            predefineCellClass = self._predefineCellClass(cellModel, cellVal, rowData, rowId);
-            classValue = cellModel["cellClass"];
-            type = $.type(classValue);
-
-            if (type === "undefined") {
-                return predefineCellClass;
-            }
-
-            if (type === "string") {
-                return [predefineCellClass, classValue].join(" ");
-            }
-
-            if (type === "function") {
-                opts = {rowId: rowId, colModel: cellModel, gid: $(this.context).attr("id")};
-                return [predefineCellClass, classValue.call(self, cellVal, opts, rowData, rowId)].join(" ");
-            }
-
-            return predefineCellClass;
-        },
-
-        /**
-         * 获得单元格dom的style属性，渲染单元格时使用
-         * @param {colModel} cellModel 单元格的配置项
-         * @param {*} cellVal 单元格的值
-         * @param {object} rowData 行数据
-         * @param {string} rowId 行id
-         * @returns {string}
-         */
-        cellStyle: function (cellModel, cellVal, rowData, rowId) {
-            var self = this, styleValue, opts, type, result, predefineCellStyle;
-
-            predefineCellStyle = self._predefineCellStyle(cellModel, cellVal, rowData, rowId);
-            styleValue = cellModel["cellStyle"];
-            type = $.type(styleValue);
-
-            if (type === "undefined") {
-                return predefineCellStyle;
-            }
-
-            if (type === "string") {
-                return [predefineCellStyle, styleValue].join(" ");
-            }
-
-            if (type === "function") {
-                opts = {rowId: rowId, colModel: cellModel, gid: $(this.context).attr("id")};
-                styleValue = styleValue.call(self, cellVal, opts, rowData, rowId);
-                if ($.type(styleValue) === "string") {
-                    return [predefineCellStyle, styleValue].join(" ");
-                }
-                if ($.type(styleValue) === "object") {
-                    result = "";
-                    $.each(styleValue, function (key, value) {
-                        result += " " + key + ":" + value + "; ";
-                    });
-                    return [predefineCellStyle, result].join(" ");
-                }
-            }
-
-            if (type === "object") {
-                result = "";
-                $.each(styleValue, function (key, value) {
-                    result += " " + key + ":" + value + "; ";
-                });
-                return [predefineCellStyle, result].join(" ");
-            }
-
-            return predefineCellStyle;
-        },
-
-        /**
-         * 获得grid行的自定义属性，渲染单元格时使用
-         * @param {object} rowData 行数据
-         * @param {string} rowId 行id
-         * @returns {string}
-         */
-        rowAttr: function (rowData, rowId) {
-            var self = this, attrValue, opts, type, result;
-
-            attrValue = self.getConfig("rowAttr");
-            type = $.type(attrValue);
-
-            if (type === "undefined") {
-                return "";
-            }
-
-            if (type === "string") {
-                return attrValue;
-            }
-
-            if (type === "function") {
-                opts = {rowId: rowId, gid: $(this.context).attr("id")};
-                attrValue = attrValue.call(self, rowData, rowId, opts);
-                if ($.type(attrValue) === "string") {
-                    return attrValue;
-                }
-                if ($.type(attrValue) === "object") {
-                    result = "";
-                    $.each(attrValue, function (key, value) {
-                        result += " " + key + "=" + value + " ";
-                    });
-                    return result;
-                }
-            }
-
-            if (type === "object") {
-                result = "";
-                $.each(attrValue, function (key, value) {
-                    result += " " + key + "=" + value + " ";
-                });
-                return result;
-            }
-
-            return "";
-        },
-
-        /**
-         * 获得grid行的的class值，渲染单元格时使用
-         * @param {object} rowData 行数据
-         * @param {string} rowId 行id
-         * @returns {string}
-         */
-        rowClass: function (rowData, rowId) {
-            var self = this, classValue, opts, type, predefineRowClass;
-
-            predefineRowClass = self._predefineRowClass(rowData, rowId)
-            classValue = self.getConfig("rowClass");
-            type = $.type(classValue);
-
-            if (type === "undefined") {
-                return predefineRowClass;
-            }
-
-            if (type === "string") {
-                return [predefineRowClass, classValue].join(" ");
-            }
-
-            if (type === "function") {
-                opts = {rowId: rowId, gid: $(this.context).attr("id")};
-                return [predefineRowClass, classValue.call(self, rowData, rowId, opts)].join(" ");
-            }
-
-            return predefineRowClass;
-        },
-
-        /**
-         * 获得grid行的的style属性，渲染单元格时使用
-         * @param {object} rowData 行数据
-         * @param {string} rowId 行id
-         * @returns {string}
-         */
-        rowStyle: function (rowData, rowId) {
-            var self = this, styleValue, opts, type, result, predefineRowStyle;
-
-            predefineRowStyle = self._predefineRowStyle(rowData, rowId)
-            styleValue = self.getConfig("rowStyle");
-            type = $.type(styleValue);
-
-            if (type === "undefined") {
-                return predefineRowStyle;
-            }
-
-            if (type === "string") {
-                return [predefineRowStyle, styleValue].join(" ");
-            }
-
-            if (type === "function") {
-                opts = {rowId: rowId, gid: $(this.context).attr("id")};
-                styleValue = styleValue.call(self, rowData, rowId, opts);
-                if ($.type(styleValue) === "string") {
-                    return [predefineRowStyle, styleValue].join(" ");
-                }
-                if ($.type(styleValue) === "object") {
-                    result = "";
-                    $.each(styleValue, function (key, value) {
-                        result += " " + key + ":" + value + "; ";
-                    });
-                    return [predefineRowStyle, result].join(" ");
-                }
-            }
-
-            if (type === "object") {
-                result = "";
-                $.each(styleValue, function (key, value) {
-                    result += " " + key + ":" + value + "; ";
-                });
-                return result;
-            }
-
-            return "";
-        }
     };
 
     $.extend(Grid.prototype, {
@@ -693,7 +733,8 @@
                 keyName: option.keyName,
                 colModel: colModel,
                 colName: colName,
-                rowNumber: option.rowNumber
+                rowNumber: option.rowNumber,
+                height: option.height
             };
             rowDataList = $.extend(true, [], option.data);
             dataMap = _.indexBy(rowDataList, option.keyName);
@@ -720,7 +761,7 @@
         renderGridContent: function (renderModel) {
             var self = this, context = self.context;
 
-            $(context).html(templateUtil.getHTML("gridTemplate", {renderModel: renderModel}));
+            $(context).html(templateUtil.getHTML("gridTemplate", {renderModel: renderModel, gridInstance: self}));
         },
 
         /**
@@ -789,7 +830,7 @@
             var self = this;
 
             cachedPage || (cachedPage = self.getPageInfo()["cachedPage"]);
-            return Object.keys(cachedPage).sort(function (numA, numB) {
+            return _.keys(cachedPage).sort(function (numA, numB) {
                 return Number(numA) - Number(numB);
             });
         },
@@ -1056,7 +1097,7 @@
             }
             return Grid.fmatter.util.NumberFormat(cellVal, op);
         },
-        
+
         number: function (cellVal, opts) {
             var op = $.extend({}, opts.number);
             if (opts.colModel !== undefined && opts.colModel.formatoptions !== undefined) {
@@ -1067,7 +1108,7 @@
             }
             return Grid.fmatter.util.NumberFormat(cellVal, op);
         },
-        
+
         currency: function (cellVal, opts) {
             var op = $.extend({}, opts.currency);
             if (opts.colModel !== undefined && opts.colModel.formatoptions !== undefined) {
@@ -1078,7 +1119,7 @@
             }
             return Grid.fmatter.util.NumberFormat(cellVal, op);
         },
-        
+
         /**
          * e.g. colModel中使用举例如下
          * formatter: "typeEnum", formatoptions: {typeEnum: {"1": "待处理", "2": "待审核", "3": "已审核"}}
@@ -1123,7 +1164,7 @@
 
             $(this).data("gridInstance", gridInstance);
         });
-   };
+    };
 
     Grid.defaults = $.fn.ouiGrid.defaults = {
         rowNumber: true,
