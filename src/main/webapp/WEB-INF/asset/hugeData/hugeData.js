@@ -17,7 +17,7 @@ $(function () {
                         "font-weight": "bold"
                     },
                     cellClass: function () {
-                        return "right";
+                        return "bold";
                     }
                 },
                 {

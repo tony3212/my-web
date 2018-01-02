@@ -4,6 +4,7 @@
  * @property {string} colModel.label 列的展示名称
  * @property {string | function} colModel.formatter 显示值格式器
  * @property {? object} colModel.formatoptions 格式配置项
+ * @property {string} colModel.align 对齐方式, left,center,right中的一个值
  * @property {? object | function} colModel.cellStyle 单元格样式
  * @property {? string | function} colModel.cellClass 单元格class
  * @property {? string | object | function} colModel.cellAttr 单元格属性
@@ -203,6 +204,83 @@
             log("加载完毕");
         },
 
+
+        /**
+         * 初始化colModel的初始值
+         * @param {colModel} colModel
+         */
+        _initColModel: function (colModel) {
+            $.each(colModel, function (index, cellModel) {
+                var align = cellModel.align, formatter = cellModel.formatter;
+
+                // 处理对齐方式
+                if ( align === undefined) {
+                    if (formatter === undefined) {
+                        cellModel.align = "left";
+                    } else if (formatter === "number" || formatter === "integer" || formatter === "currency") {
+                        cellModel.align = "right";
+                    } else if (formatter === "typeEnum") {
+                        cellModel.align = "center";
+                    } else {
+                        cellModel.align = "left";
+                    }
+                }
+            });
+        },
+
+        /**
+         * 获得预定义的class样式
+         * @param {colModel} cellModel
+         * @param {*} cellVal 单元格的值
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         * @private
+         */
+        _predefineCellClass: function (cellModel, cellVal, rowData, rowId) {
+            var classArray = [];
+
+            classArray.push("grid-cell");
+
+            return classArray.join(" ");
+        },
+
+        /**
+         * 获得预定义的样式
+         * @param {colModel} cellModel
+         * @param {*} cellVal 单元格的值
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         * @private
+         */
+        _predefineCellStyle: function (cellModel, cellVal, rowData, rowId) {
+            var classArray = [];
+
+            classArray.push("text-align" + ":" + cellModel.align + ";");
+
+            return classArray.join("");
+        },
+
+        /**
+         * 获得预定义行的class样式
+         * @param rowData
+         * @param rowId
+         * @returns {string}
+         * @private
+         */
+        _predefineRowClass: function (rowData, rowId) {
+            return "grid-row";
+        },
+
+        /**
+         * 预定义行样式
+         * @private
+         */
+        _predefineRowStyle: function (rowData, rowId) {
+            return "background: yellow;";
+        },
+
         /**
          * 获得格式化单元格的值，渲染单元格时使用
          * @param {colModel} cellModel 单元格的配置项
@@ -290,25 +368,26 @@
          * @returns {string}
          */
         cellClass: function (cellModel, cellVal, rowData, rowId) {
-            var classValue, opts, type;
+            var self = this, classValue, opts, type, predefineCellClass;
 
+            predefineCellClass = self._predefineCellClass(cellModel, cellVal, rowData, rowId);
             classValue = cellModel["cellClass"];
             type = $.type(classValue);
 
             if (type === "undefined") {
-                return "";
+                return predefineCellClass;
             }
 
             if (type === "string") {
-                return classValue;
+                return [predefineCellClass, classValue].join(" ");
             }
 
             if (type === "function") {
                 opts = {rowId: rowId, colModel: cellModel, gid: $(this.context).attr("id")};
-                return classValue.call(self, cellVal, opts, rowData, rowId);
+                return [predefineCellClass, classValue.call(self, cellVal, opts, rowData, rowId)].join(" ");
             }
 
-            return "";
+            return predefineCellClass;
         },
 
         /**
@@ -320,31 +399,32 @@
          * @returns {string}
          */
         cellStyle: function (cellModel, cellVal, rowData, rowId) {
-            var styleValue, opts, type, result;
+            var self = this, styleValue, opts, type, result, predefineCellStyle;
 
+            predefineCellStyle = self._predefineCellStyle(cellModel, cellVal, rowData, rowId);
             styleValue = cellModel["cellStyle"];
             type = $.type(styleValue);
 
             if (type === "undefined") {
-                return "";
+                return predefineCellStyle;
             }
 
             if (type === "string") {
-                return styleValue;
+                return [predefineCellStyle, styleValue].join(" ");
             }
 
             if (type === "function") {
                 opts = {rowId: rowId, colModel: cellModel, gid: $(this.context).attr("id")};
                 styleValue = styleValue.call(self, cellVal, opts, rowData, rowId);
                 if ($.type(styleValue) === "string") {
-                    return styleValue;
+                    return [predefineCellStyle, styleValue].join(" ");
                 }
                 if ($.type(styleValue) === "object") {
                     result = "";
                     $.each(styleValue, function (key, value) {
                         result += " " + key + ":" + value + "; ";
                     });
-                    return result;
+                    return [predefineCellStyle, result].join(" ");
                 }
             }
 
@@ -353,10 +433,10 @@
                 $.each(styleValue, function (key, value) {
                     result += " " + key + ":" + value + "; ";
                 });
-                return result;
+                return [predefineCellStyle, result].join(" ");
             }
 
-            return "";
+            return predefineCellStyle;
         },
 
         /**
@@ -412,25 +492,26 @@
          * @returns {string}
          */
         rowClass: function (rowData, rowId) {
-            var self = this, classValue, opts, type;
+            var self = this, classValue, opts, type, predefineRowClass;
 
+            predefineRowClass = self._predefineRowClass(rowData, rowId)
             classValue = self.getConfig("rowClass");
             type = $.type(classValue);
 
             if (type === "undefined") {
-                return "";
+                return predefineRowClass;
             }
 
             if (type === "string") {
-                return classValue;
+                return [predefineRowClass, classValue].join(" ");
             }
 
             if (type === "function") {
                 opts = {rowId: rowId, gid: $(this.context).attr("id")};
-                return classValue.call(self, rowData, rowId, opts);
+                return [predefineRowClass, classValue.call(self, rowData, rowId, opts)].join(" ");
             }
 
-            return "";
+            return predefineRowClass;
         },
 
         /**
@@ -440,31 +521,32 @@
          * @returns {string}
          */
         rowStyle: function (rowData, rowId) {
-            var self = this, styleValue, opts, type, result;
+            var self = this, styleValue, opts, type, result, predefineRowStyle;
 
+            predefineRowStyle = self._predefineRowStyle(rowData, rowId)
             styleValue = self.getConfig("rowStyle");
             type = $.type(styleValue);
 
             if (type === "undefined") {
-                return "";
+                return predefineRowStyle;
             }
 
             if (type === "string") {
-                return styleValue;
+                return [predefineRowStyle, styleValue].join(" ");
             }
 
             if (type === "function") {
                 opts = {rowId: rowId, gid: $(this.context).attr("id")};
                 styleValue = styleValue.call(self, rowData, rowId, opts);
                 if ($.type(styleValue) === "string") {
-                    return styleValue;
+                    return [predefineRowStyle, styleValue].join(" ");
                 }
                 if ($.type(styleValue) === "object") {
                     result = "";
                     $.each(styleValue, function (key, value) {
                         result += " " + key + ":" + value + "; ";
                     });
-                    return result;
+                    return [predefineRowStyle, result].join(" ");
                 }
             }
 
@@ -605,6 +687,7 @@
 
             // 2.初始化相关数据
             colModel = option.colModel;
+            self._initColModel(colModel);
             colName = _.pluck(colModel, "label");
             renderModel = {
                 keyName: option.keyName,
