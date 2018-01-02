@@ -171,7 +171,7 @@
                     removeElementHeight += $(this).outerHeight(true);
                 });
                 log("删除【序号%i】之前的数据，共删除%i个元素", before2PageEndIndex + 1, $preAll.length);
-                $tbody = $(self.getGridBody());
+                $tbody = $(self.getBody());
                 preScrollTop = $tbody.scrollTop();
                 $preAll.remove();
                 // 为了实现无缝滚动（为了往下翻页时不会出现抖动），重新设置scrollTop
@@ -214,7 +214,7 @@
                 renderModel: self.getRenderModel(),
                 gridInstance: self
             });
-            $tbody = $(self.getGridBody());
+            $tbody = $(self.getBody());
             $referenceElement = !referenceRowId
                 ? $tbody
                 : $(self.getRowElementByRowId(referenceRowId));
@@ -320,6 +320,30 @@
         },
 
         /**
+         * 获得预定义的grid的class样式
+         * @private
+         */
+        _predefineGridClass: function () {
+            return "grid";
+        },
+
+        /**
+         * 获得预定义的grid的style样式
+         * @private
+         */
+        _predefineGridStyle: function (renderModel) {
+            var height = renderModel.height, styleValue = {};
+
+            if ($.isNumeric(height)) {
+                styleValue.height = height + "px";
+            } else if (height) {
+                styleValue.height = height;
+            }
+
+            return joinStr(styleObject2String(styleValue));
+        },
+
+        /**
          * 获得预定义的grid的body的class样式
          * @private
          */
@@ -333,8 +357,25 @@
          * @private
          */
         _predefineBodyStyle: function (renderModel) {
-            return styleObject2String({height: renderModel.height});
+            return joinStr(styleObject2String({height: "inherit"}));
         },
+
+        /**
+         * 获得grid的class的样式，渲染时使用
+         * @returns {*|string}
+         */
+        gridClass: function (renderModel) {
+            return this._predefineGridClass(renderModel);
+        },
+
+        /**
+         * 获得grid的style的样式，渲染时使用
+         * @returns {*|string}
+         */
+        gridStyle: function (renderModel) {
+            return this._predefineGridStyle(renderModel);
+        },
+
 
 
         /**
@@ -769,7 +810,7 @@
          */
         bindEvent: function () {
             var self = this, context = self.context,
-                $grid = $(context), $tbody = $(self.getGridBody()),
+                $grid = $(context), $tbody = $(self.getBody()),
                 lastScrollTop = 0;
 
             $tbody.off("scroll.gridPage")
@@ -858,7 +899,7 @@
         /**
          * 获得表体元素
          */
-        getGridBody: function () {
+        getBody: function () {
             var $tbody = $("tbody", this.context);
             return $tbody.length > 0 ? $tbody[0] : null;
         },

@@ -39,7 +39,7 @@ $(function () {
                 colModel: colModel,
                 data: data,
                 rowNumber: true,
-                height: "400px",
+                height: 300,
                 rowAttr: function (rowData, rowId, options) {
                     return {
                         "data-row-name": rowId

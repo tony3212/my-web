@@ -23,7 +23,7 @@
             display:block;
             overflow-y:scroll;
         }
-        table thead, table tbody tr {
+        table thead, table tfoot, table tbody tr {
             display:table;
             width: calc(100% - 1px);
             table-layout:fixed;
@@ -45,7 +45,9 @@
         gridInstance: {object}
     -->
     <script id="gridTemplate" type="text/template">
-        <table>
+        [% var gridClass = gridInstance.gridClass(renderModel); %]
+        [% var gridStyle = gridInstance.gridStyle(renderModel); %]
+        <table class="[%= gridClass %]" style="[%= gridStyle %]">
             <thead>
                 <tr>
                     [% if (renderModel.rowNumber) { %]
@@ -72,6 +74,19 @@
                 [% } %]
             </tr>
             </tbody>
+
+            <tfoot>
+            <tr>
+                [% if (renderModel.rowNumber) { %]
+                <td></td>
+                [% } %]
+                [% var colName = renderModel.colName; %]
+                [% var colModel = renderModel.colModel; %]
+                [% for (var key in colName) { %]
+                <td data-name="[%= colModel[key].name %]">[%= colName[key] %]</td>
+                [% } %]
+            </tr>
+            </tfoot>
         </table>
     </script>
 
