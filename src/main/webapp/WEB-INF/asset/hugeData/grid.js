@@ -754,7 +754,7 @@
                 return;
             }
 
-            self.extendConfig("loading", true);
+            self.extendConfig({"loading": true});
             self._showBlock();
             pageInfo = self.getPageInfo()
             cachedPage = pageInfo["cachedPage"];
@@ -787,7 +787,7 @@
             self._renderRowData(renderPageModel, refRowId, position);
             self._removeMoreThen2Page(renderPageModel, pageInfo);
             log("缓存页面：" + self.getCachedPageNumber());
-            self.extendConfig("loading", false);
+            self.extendConfig({"loading": false});
             self._hideBlock();
             logGroupEnd("-----------------------------------------------");
         },

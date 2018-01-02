@@ -49,7 +49,7 @@ $(function () {
                 },
                 rowStyle: function (rowData, rowId, options) {
                     return {
-                        "background-color": "red"
+                        "background-color": "#eee"
                     };
                 }
             });
