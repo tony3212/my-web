@@ -28,7 +28,7 @@
             width: calc(100% - 1px);
             table-layout:fixed;
         }
-        table thead {
+        table thead, table tfoot {
             width: calc( 100% - 1em );
             background: #00cccc;
         }
@@ -74,19 +74,6 @@
                 [% } %]
             </tr>
             </tbody>
-
-            <tfoot>
-            <tr>
-                [% if (renderModel.rowNumber) { %]
-                <td></td>
-                [% } %]
-                [% var colName = renderModel.colName; %]
-                [% var colModel = renderModel.colModel; %]
-                [% for (var key in colName) { %]
-                <td data-name="[%= colModel[key].name %]">[%= colName[key] %]</td>
-                [% } %]
-            </tr>
-            </tfoot>
         </table>
     </script>
 
@@ -139,8 +126,9 @@
     </script>
 </head>
 <body>
-<div id="grid" class="hotkey">
+<div id="grid">
 
 </div>
+
 </body>
 </html>
