@@ -5,6 +5,7 @@
  * @property {string | function} colModel.formatter 显示值格式器
  * @property {? object} colModel.formatoptions 格式配置项
  * @property {string} colModel.align 对齐方式, left,center,right中的一个值
+ * @property {number} colModel.width 宽度，列的宽度
  * @property {? object | function} colModel.cellStyle 单元格样式
  * @property {? string | function} colModel.cellClass 单元格class
  * @property {? string | object | function} colModel.cellAttr 单元格属性
@@ -14,11 +15,16 @@
  * @property {colModel[]} option.colModel 每列列定义
  * @property {object[]} option.data 要展示的数据
  * @property {boolean} option.rowNumber 是否展示序列号
- * @property {string} option.height grid的body的高度
- * @property {string | integer} 表格高度
+ * @property {number} option.rowNumberWidth 序列号的宽度
+ * @property {string} option.height 表格高度
+ * @property {string | integer} option.width 表格宽度c
+ * @property {boolean} option.shrinkToFit
+ * @property {?number} option.scrollWidth 滚动条的宽度
  * @property {string | object | function} option.rowAttr 行dom的属性
  * @property {string | object | function} option.rowClass 行dom的class
  * @property {string | object | function} option.rowStyle 行dom的style
+ *
+ * @type {object} config
  */
 (function ($) {
     function log() {
@@ -209,7 +215,7 @@
             var self = this, $tbody, $referenceElement, trHtml, beforeScrollTop, addedHeight = 0;
 
             position || (position = "after");
-            trHtml = templateUtil.getHTML("gridDataTemplate", {
+            trHtml = templateUtil.getHTML("outGridDataTemplate", {
                 renderPageModel: renderPageModel,
                 renderModel: self.getRenderModel(),
                 gridInstance: self
@@ -250,12 +256,25 @@
             log("加载完毕");
         },
 
-
         /**
-         * 初始化colModel的初始值
-         * @param {colModel} colModel
+         * 初始化config的初始值
+         * @param {option} config
+         * @private
          */
-        _initColModel: function (colModel) {
+        _initConfig: function (config) {
+            var self = this,
+                width = config["width"],
+                renderModel = config.renderModel,
+                colModel = renderModel.colModel,
+                gridWidth, tableWidth, allColWidth = 0, shrinkToFit;
+
+            if (width === "auto") {
+                gridWidth = $(self.context).innerWidth();
+            } else {
+                gridWidth = config.width;
+            }
+            gridWidth -= config.scrollWidth;
+
             $.each(colModel, function (index, cellModel) {
                 var align = cellModel.align, formatter = cellModel.formatter;
 
@@ -271,52 +290,42 @@
                         cellModel.align = "left";
                     }
                 }
+
+                // 没有填写宽度时，设置默认宽度
+                cellModel.width === undefined && (cellModel.width = 150);
+                allColWidth += cellModel.width;
             });
+
+            // 设置表格宽度
+            if (config.shrinkToFit) {
+                tableWidth = gridWidth;
+            } else {
+                tableWidth = allColWidth;
+            }
+
+            shrinkToFit = config.shrinkToFit;
+            $.each(colModel, function (index, cellModel) {
+                var width = cellModel.width;
+
+                cellModel.actualWidth = !shrinkToFit ? width : Math.round(width * tableWidth / allColWidth);
+            });
+
+            config.gridWidth = gridWidth;
+            config.tableWidth = tableWidth;
+        }
+    };
+
+    /**
+     * 渲染时用到的方法
+     */
+    $.extend(Grid.prototype, {
+
+        _getGridWidth: function () {
+            return this.getConfig("gridWidth");
         },
 
-        /**
-         * 获得预定义的class样式
-         * @param {colModel} cellModel
-         * @param {*} cellVal 单元格的值
-         * @param {object} rowData 行数据
-         * @param {string} rowId 行id
-         * @returns {string}
-         * @private
-         */
-        _predefineCellClass: function (cellModel, cellVal, rowData, rowId) {
-            return joinClass("grid-cell");
-        },
-
-        /**
-         * 获得预定义的样式
-         * @param {colModel} cellModel
-         * @param {*} cellVal 单元格的值
-         * @param {object} rowData 行数据
-         * @param {string} rowId 行id
-         * @returns {string}
-         * @private
-         */
-        _predefineCellStyle: function (cellModel, cellVal, rowData, rowId) {
-            return joinStr(styleObject2String({"text-align" : cellModel.align}));
-        },
-
-        /**
-         * 获得预定义行的class样式
-         * @param rowData
-         * @param rowId
-         * @returns {string}
-         * @private
-         */
-        _predefineRowClass: function (rowData, rowId) {
-            return "grid-row";
-        },
-
-        /**
-         * 预定义行样式
-         * @private
-         */
-        _predefineRowStyle: function (rowData, rowId) {
-            return "background: yellow;";
+        _getTableWidth: function () {
+            return this.getConfig("tableWidth");
         },
 
         /**
@@ -325,6 +334,14 @@
          */
         _predefineGridClass: function () {
             return "grid";
+        },
+
+        /**
+         * 获得grid的class的样式，渲染时使用
+         * @returns {*|string}
+         */
+        gridClass: function (renderModel) {
+            return this._predefineGridClass(renderModel);
         },
 
         /**
@@ -344,31 +361,6 @@
         },
 
         /**
-         * 获得预定义的grid的body的class样式
-         * @private
-         */
-        _predefineBodyClass: function () {
-            return "grid-body";
-
-        },
-
-        /**
-         * 获得预定义的grid的body的style样式
-         * @private
-         */
-        _predefineBodyStyle: function (renderModel) {
-            return joinStr(styleObject2String({height: "inherit"}));
-        },
-
-        /**
-         * 获得grid的class的样式，渲染时使用
-         * @returns {*|string}
-         */
-        gridClass: function (renderModel) {
-            return this._predefineGridClass(renderModel);
-        },
-
-        /**
          * 获得grid的style的样式，渲染时使用
          * @returns {*|string}
          */
@@ -376,7 +368,115 @@
             return this._predefineGridStyle(renderModel);
         },
 
+        _predefineHeaderClass: function (renderModel) {
+            return "grid-hdiv";
+        },
 
+        headClass: function (renderModel) {
+            return this._predefineHeaderClass(renderModel);
+        },
+
+        _predefineHeaderStyle: function (renderModel) {
+            var self = this;
+
+            return styleObject2String({
+                width: self._getGridWidth() + "px"
+            });
+        },
+
+        headStyle: function (renderModel) {
+            return this._predefineHeaderStyle(renderModel);
+        },
+
+        _predefineHeadTableClass: function (renderModel) {
+            return "grid-htable";
+        },
+
+        headTableClass: function (renderModel) {
+            return this._predefineHeadTableClass(renderModel);
+        },
+
+        _predefineHeadTableStyle: function (renderModel) {
+            var self = this;
+
+            return styleObject2String({
+                width: self._getTableWidth() + "px"
+            });
+        },
+
+        headTableStyle: function (renderModel) {
+            return this._predefineHeadTableStyle(renderModel);
+        },
+
+        _predefineTemplateRowClass: function (renderModel) {
+            return "grid-template-row";
+        },
+
+        templateRowClass: function (renderModel) {
+            return this._predefineTemplateRowClass(renderModel);
+        },
+
+        _predefineTemplateRowStyle: function (renderModel) {
+            return "";
+        },
+
+        templateRowStyle: function (renderModel) {
+            return this._predefineTemplateRowStyle(renderModel);
+        },
+
+        _predefineTemplateCellClass: function (cellModel) {
+            return "grid-template-cell";
+        },
+
+        templateCellClass: function (cellModel) {
+            return this._predefineTemplateCellClass(cellModel);
+        },
+
+        _predefineTemplateCellStyle: function (cellModel) {
+            return styleObject2String({
+                width: cellModel.actualWidth + "px"
+            });
+        },
+
+        templateCellStyle: function (cellModel) {
+            return this._predefineTemplateCellStyle(cellModel);
+        },
+
+        /**
+         * 获得预定义的头头部单元格的样式值
+         * @private
+         */
+        _predefineHeadCellClass: function (cellModel) {
+            return joinClass("grid-head-cell");
+        },
+
+        /**
+         * 获得头部单元格dom的class的值，渲染单元格时使用
+         * @param {colModel} cellModel
+         */
+        headCellClass: function (cellModel) {
+            return this._predefineHeadCellClass(cellModel);
+        },
+
+        _predefineHeadCellStyle: function (cellModel) {
+           return "";
+        },
+
+        /**
+         * 获得头部单元格dom的class的值，渲染单元格时使用
+         * @param {colModel} cellModel
+         */
+        headCellStyle: function (cellModel) {
+            return this._predefineHeadCellStyle(cellModel);
+        },
+
+        /**
+         * 获得预定义的grid的body的class样式
+         * @private
+         */
+        _predefineBodyClass: function () {
+            return "grid-bdiv";
+        },
 
         /**
          * 获得body的class的样式，渲染时使用
@@ -387,12 +487,61 @@
         },
 
         /**
+         * 获得预定义的grid的body的style样式
+         * @private
+         */
+        _predefineBodyStyle: function (renderModel) {
+            var self = this;
+
+            return joinStr(styleObject2String({
+                width: self._getGridWidth() + "px"
+            }));
+        },
+
+        /**
          * 获得body的style的样式，渲染时使用
          * @returns {*|string}
          */
         bodyStyle: function (renderModel) {
             return this._predefineBodyStyle(renderModel);
         },
+
+        /**
+         * 获得预定义的grid的body中table的class样式
+         * @private
+         */
+        _predefineBodyTableClass: function () {
+            return "grid-btable";
+        },
+
+        /**
+         * 获得body中table的class的样式，渲染时使用
+         * @returns {*|string}
+         */
+        bodyTableClass: function (renderModel) {
+            return this._predefineBodyTableClass(renderModel);
+        },
+
+        /**
+         * 获得预定义的grid的body中table的style样式
+         * @private
+         */
+        _predefineBodyTableStyle: function (renderModel) {
+            var self = this;
+
+            return joinStr(styleObject2String({
+                width: self._getTableWidth() + "px"
+            }));
+        },
+
+        /**
+         * 获得body中table的style的样式，渲染时使用
+         * @returns {*|string}
+         */
+        bodyTableStyle: function (renderModel) {
+            return this._predefineBodyTableStyle(renderModel);
+        },
+
 
         /**
          * 获得单元格dom的自定义属性，渲染单元格时使用
@@ -435,7 +584,20 @@
         },
 
         /**
-         * 获得单元格dom的class属性，渲染单元格时使用
+         * 获得预定义的class样式
+         * @param {colModel} cellModel
+         * @param {*} cellVal 单元格的值
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         * @private
+         */
+        _predefineCellClass: function (cellModel, cellVal, rowData, rowId) {
+            return joinClass("grid-cell");
+        },
+
+        /**
+         * 获得单元格dom的class的值，渲染单元格时使用
          * @param {colModel} cellModel 单元格的配置项
          * @param {*} cellVal 单元格的值
          * @param {object} rowData 行数据
@@ -466,7 +628,20 @@
         },
 
         /**
-         * 获得单元格dom的style属性，渲染单元格时使用
+         * 获得预定义的样式
+         * @param {colModel} cellModel
+         * @param {*} cellVal 单元格的值
+         * @param {object} rowData 行数据
+         * @param {string} rowId 行id
+         * @returns {string}
+         * @private
+         */
+        _predefineCellStyle: function (cellModel, cellVal, rowData, rowId) {
+            return joinStr(styleObject2String({"text-align" : cellModel.align}));
+        },
+
+        /**
+         * 获得单元格dom的style值，渲染单元格时使用
          * @param {colModel} cellModel 单元格的配置项
          * @param {*} cellVal 单元格的值
          * @param {object} rowData 行数据
@@ -545,6 +720,17 @@
         },
 
         /**
+         * 获得预定义行的class样式
+         * @param rowData
+         * @param rowId
+         * @returns {string}
+         * @private
+         */
+        _predefineRowClass: function (rowData, rowId) {
+            return "grid-row";
+        },
+
+        /**
          * 获得grid行的的class值，渲染单元格时使用
          * @param {object} rowData 行数据
          * @param {string} rowId 行id
@@ -574,7 +760,15 @@
         },
 
         /**
-         * 获得grid行的的style属性，渲染单元格时使用
+         * 预定义行样式
+         * @private
+         */
+        _predefineRowStyle: function (rowData, rowId) {
+            return "background: yellow;";
+        },
+
+        /**
+         * 获得grid行的的style值，渲染单元格时使用
          * @param {object} rowData 行数据
          * @param {string} rowId 行id
          * @returns {string}
@@ -640,8 +834,8 @@
             }
 
             return cellVal;
-        },
-    };
+        }
+    });
 
     $.extend(Grid.prototype, {
         /**
@@ -768,25 +962,26 @@
 
             // 2.初始化相关数据
             colModel = option.colModel;
-            self._initColModel(colModel);
             colName = _.pluck(colModel, "label");
             renderModel = {
                 keyName: option.keyName,
                 colModel: colModel,
                 colName: colName,
                 rowNumber: option.rowNumber,
+                rowNumberWidth: option.rowNumberWidth,
                 height: option.height
             };
             rowDataList = $.extend(true, [], option.data);
             dataMap = _.indexBy(rowDataList, option.keyName);
             config = $.extend(true, {}, config, option, {renderModel: renderModel, dataMap: dataMap});
+            self._initConfig(config);
             self.setConfig(config);
 
             // 3.将数据进行分页，并存储分布信息
             self.extendPageInfo(self._pageData(rowDataList));
 
             // 4.渲染grid基本内容
-            self.renderGridContent(renderModel);
+            self.renderGridContent(config.renderModel);
 
             // 5.绑定事件
             self.bindEvent();
@@ -802,7 +997,7 @@
         renderGridContent: function (renderModel) {
             var self = this, context = self.context;
 
-            $(context).html(templateUtil.getHTML("gridTemplate", {renderModel: renderModel, gridInstance: self}));
+            $(context).html(templateUtil.getHTML("ouiGridTemplate", {renderModel: renderModel, gridInstance: self}));
         },
 
         /**
@@ -1209,7 +1404,10 @@
 
     Grid.defaults = $.fn.ouiGrid.defaults = {
         rowNumber: true,
-        rowNumWidth: 30
+        rowNumWidth: 30,
+        width: "auto",
+        shrinkToFit: false,
+        scrollWidth: 18
     };
 
     Grid.fmatter.defaults = $.fn.ouiGrid.fmatter = {

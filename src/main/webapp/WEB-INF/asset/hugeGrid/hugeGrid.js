@@ -3,10 +3,15 @@ $(function () {
     $.extend(pageObj, {
         init: function () {
             var colModel = [
-                {name: "assitCode", label: "科目编码"},
+                {
+                    name: "assitCode",
+                    label: "科目编码",
+                    width: 80
+                },
                 {
                     name: "assitName", 
                     label: "科目名称",
+                    width: 250,
                     cellAttr: function (cellColModel, cellVal, rowData, rowId) {
                         return {
                             "rowId": rowId
@@ -23,12 +28,14 @@ $(function () {
                 {
                     name: "subjectOrient",
                     label: "方向",
+                    width: 40,
                     formatter: "typeEnum",
                     formatoptions: {typeEnum: {"0": "否", "1": "是"}}
                 },
                 {
                     name: "endAmt",
                     label: "金额",
+                    width: 80,
                     formatter: "currency"
                 }
             ];
@@ -39,7 +46,9 @@ $(function () {
                 colModel: colModel,
                 data: data,
                 rowNumber: true,
+                rowNumberWidth: 30,
                 height: 500,
+                shrinkToFit: false,
                 rowAttr: function (rowData, rowId, options) {
                     return {
                         "data-row-name": rowId
