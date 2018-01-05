@@ -29,11 +29,11 @@
         }
         .grid-hbox {
             float: left;
-            padding-right: 20px;
         }
 
         .grid-htable, .grid-btable {
             table-layout: fixed;
+            border-collapse: collapse;
             box-sizing: border-box;
         }
 
@@ -93,10 +93,13 @@
             [% var headClass = gridInstance.headClass(renderModel); %]
             [% var headStyle = gridInstance.headStyle(renderModel); %]
             <div class="[%= headClass %]" style="[%= headStyle %]">
-                [% var headTableClass = gridInstance.headTableClass(renderModel); %]
-                [% var headTableStyle = gridInstance.headTableStyle(renderModel); %]
-                <table class="[%= headTableClass %]" style="[%= headTableStyle %]">
-                    <thead>
+                [% var headBoxClass = gridInstance.headBoxClass(renderModel); %]
+                [% var headBoxStyle = gridInstance.headBoxStyle(renderModel); %]
+                <div class="[%= headBoxClass %]" style="[%= headBoxStyle %]">
+                    [% var headTableClass = gridInstance.headTableClass(renderModel); %]
+                    [% var headTableStyle = gridInstance.headTableStyle(renderModel); %]
+                    <table class="[%= headTableClass %]" style="[%= headTableStyle %]">
+                        <thead>
                         [% var templateRowClass = gridInstance.templateRowClass(renderModel); %]
                         [% var headTableStyle = gridInstance.templateRowStyle(renderModel); %]
                         <tr class="grid-template-row">
@@ -133,8 +136,9 @@
                             </th>
                             [% } %]
                         </tr>
-                    </thead>
-                </table>
+                        </thead>
+                    </table>
+                </div>
             </div>
 
             [% var bodyClass = gridInstance.bodyClass(renderModel); %]

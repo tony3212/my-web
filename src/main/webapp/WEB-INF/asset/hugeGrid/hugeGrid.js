@@ -35,7 +35,7 @@ $(function () {
                 {
                     name: "endAmt",
                     label: "金额",
-                    width: 80,
+                    width: 100,
                     formatter: "currency"
                 }
             ];
@@ -48,20 +48,20 @@ $(function () {
                 rowNumber: true,
                 rowNumberWidth: 30,
                 height: 500,
-                shrinkToFit: false,
-                rowAttr: function (rowData, rowId, options) {
-                    return {
-                        "data-row-name": rowId
-                    };
-                },
-                rowClass: function (rowData, rowId, options) {
-                   return "grid-row-" + rowId;
-                },
-                rowStyle: function (rowData, rowId, options) {
-                    return {
-                        "background-color": "#eee"
-                    };
-                }
+                shrinkToFit: true
+//                rowAttr: function (rowData, rowId, options) {
+//                    return {
+//                        "data-row-name": rowId
+//                    };
+//                },
+//                rowClass: function (rowData, rowId, options) {
+//                   return "grid-row-" + rowId;
+//                },
+//                rowStyle: function (rowData, rowId, options) {
+//                    return {
+//                        "background-color": "#eee"
+//                    };
+//                }
             });
         }
     });

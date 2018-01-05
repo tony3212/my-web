@@ -212,7 +212,7 @@
          * @private
          */
         _renderRowData: function (renderPageModel, referenceRowId, position) {
-            var self = this, $tbody, $referenceElement, trHtml, beforeScrollTop, addedHeight = 0;
+            var self = this, $bodyTBody, $bodyTable, $referenceElement, trHtml, beforeScrollTop, addedHeight = 0;
 
             position || (position = "after");
             trHtml = templateUtil.getHTML("outGridDataTemplate", {
@@ -220,9 +220,10 @@
                 renderModel: self.getRenderModel(),
                 gridInstance: self
             });
-            $tbody = $(self.getBody());
+            $bodyTBody = $(self.getBodyTBody());
+            $bodyTable = $(self.getBodyTable());
             $referenceElement = !referenceRowId
-                ? $tbody
+                ? $bodyTBody
                 : $(self.getRowElementByRowId(referenceRowId));
 
             if (!referenceRowId) {
@@ -230,13 +231,13 @@
             } else if (position === "after") {
                 $referenceElement.after(trHtml);
             } else {
-                beforeScrollTop = $tbody.scrollTop();
+                beforeScrollTop = $bodyTable.scrollTop();
                 $referenceElement.before(trHtml);
                 // 为了实现无缝滚动（为了往上翻页时不会出现抖动），重新设置scrollTop
                 $referenceElement.prevAll().each(function () {
                     addedHeight += $(this).height();
                 });
-                $tbody.scrollTop(beforeScrollTop + addedHeight);
+                $bodyTable.scrollTop(beforeScrollTop + addedHeight);
             }
         },
 
@@ -273,7 +274,6 @@
             } else {
                 gridWidth = config.width;
             }
-            gridWidth -= config.scrollWidth;
 
             $.each(colModel, function (index, cellModel) {
                 var align = cellModel.align, formatter = cellModel.formatter;
@@ -298,7 +298,7 @@
 
             // 设置表格宽度
             if (config.shrinkToFit) {
-                tableWidth = gridWidth;
+                tableWidth = gridWidth - config.scrollWidth;
             } else {
                 tableWidth = allColWidth;
             }
@@ -349,13 +349,15 @@
          * @private
          */
         _predefineGridStyle: function (renderModel) {
-            var height = renderModel.height, styleValue = {};
+            var self = this, height = renderModel.height, styleValue = {};
 
             if ($.isNumeric(height)) {
                 styleValue.height = height + "px";
             } else if (height) {
                 styleValue.height = height;
             }
+
+            styleValue.width = self._getGridWidth() + "px";
 
             return joinStr(styleObject2String(styleValue));
         },
@@ -368,15 +370,15 @@
             return this._predefineGridStyle(renderModel);
         },
 
-        _predefineHeaderClass: function (renderModel) {
+        _predefineHeadClass: function (renderModel) {
             return "grid-hdiv";
         },
 
         headClass: function (renderModel) {
-            return this._predefineHeaderClass(renderModel);
+            return this._predefineHeadClass(renderModel);
         },
 
-        _predefineHeaderStyle: function (renderModel) {
+        _predefineHeadStyle: function (renderModel) {
             var self = this;
 
             return styleObject2String({
@@ -385,7 +387,27 @@
         },
 
         headStyle: function (renderModel) {
-            return this._predefineHeaderStyle(renderModel);
+            return this._predefineHeadStyle(renderModel);
+        },
+
+        _predefineHeadBoxClass: function (renderModel) {
+            return "grid-hbox";
+        },
+
+        headBoxClass: function (renderModel) {
+            return this._predefineHeadBoxClass(renderModel);
+        },
+
+        _predefineHeadBoxStyle: function (renderModel) {
+            var self = this;
+
+            return styleObject2String({
+                "padding-right": self.getConfig("scrollWidth") + "px"
+            });
+        },
+
+        headBoxStyle: function (renderModel) {
+            return this._predefineHeadBoxStyle(renderModel);
         },
 
         _predefineHeadTableClass: function (renderModel) {
@@ -764,7 +786,7 @@
          * @private
          */
         _predefineRowStyle: function (rowData, rowId) {
-            return "background: yellow;";
+            return "";
         },
 
         /**
@@ -982,6 +1004,7 @@
 
             // 4.渲染grid基本内容
             self.renderGridContent(config.renderModel);
+            $(self.getBody()).height($(self.getGrid()).height() - $(self.getHead()).outerHeight(true));
 
             // 5.绑定事件
             self.bindEvent();
@@ -1005,10 +1028,12 @@
          */
         bindEvent: function () {
             var self = this, context = self.context,
-                $grid = $(context), $tbody = $(self.getBody()),
+                $grid = $(context),
+                $bodyTable = $(self.getBodyTable()),
+                $body = $(self.getBody()),
                 lastScrollTop = 0;
 
-            $tbody.off("scroll.gridPage")
+            $bodyTable.off("scroll.gridPage")
                 .on("scroll.gridPage", function (event) {
                     var tBody = this, $tBody = $(tBody), scrollTop, reservedHeight = 150,
                         nearlyReachTop = false, nearlyReachBottom = false,
@@ -1055,6 +1080,10 @@
                     self.loadNextPage();
                 });
 
+            $body.scroll(function () {
+                $(self.getHead()).scrollLeft($(this).scrollLeft());
+            });
+
         },
 
         /**
@@ -1091,12 +1120,27 @@
             return last ? +last : null;
         },
 
+        getGrid: function () {
+            return $(".grid", this.context).get(0);
+        },
+
+        getHead: function () {
+            return $(".grid-hdiv", this.context).get(0);
+        },
+
         /**
          * 获得表体元素
          */
         getBody: function () {
-            var $tbody = $("tbody", this.context);
-            return $tbody.length > 0 ? $tbody[0] : null;
+            return $(".grid-bdiv", this.context).get(0);
+        },
+
+        getBodyTable: function () {
+            return $(".grid-btable", this.getBody()).get(0);
+        },
+
+        getBodyTBody: function () {
+            return $("tbody", this.getBody()).get(0);
         },
 
         /**

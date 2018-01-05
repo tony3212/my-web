@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>demo</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=0">
+    <link rel="stylesheet" href="http://v3.bootcss.com/dist/css/bootstrap.css">
+    <script src="https://cdn.bootcss.com/jquery/1.10.1/jquery.min.js"></script>
+
+    <style>
+        .grid {
+            font-family: "\5FAE\8F6F\96C5\9ED1",Arial,sans-serif;
+            font-size: 13px;
+            border: 1px solid #ececec;
+        }
+        .grid-view {
+            position: relative;
+            left: 0;
+            top: 0;
+            padding: 0;
+        }
+        .grid-hdiv {
+            position: relative;
+            overflow-x: hidden;
+            border-bottom: 1px solid #e4e4e4;
+        }
+        .grid-hbox {
+            float: left;
+            padding-right: 20px;
+        }
+        .grid-htable th {
+            padding: 0 2px;
+            height: 30px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-align: center;
+            color: #8895b4;
+            background: #f7faff;
+            border-right: 1px solid #e4e4e4;
+        }
+
+        .grid-bdiv {
+            position: relative;
+            overflow: auto;
+            text-align: left;
+        }
+        .grid-btable td {
+            padding: 2px 4px;
+            height: 24px;
+            color: #68728a;
+            white-space: nowrap;
+            text-align: left;
+            border-right: 1px solid #e4e4e4;
+            border-bottom: 1px solid #e4e4e4;
+        }
+        .grid-btable .firstrow td {
+            padding: 0 2px 0 2px;
+            height: 0;
+            border-right: 1px solid;
+            border-bottom: 0 none;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="grid" style="margin-left: 100px;width: 1170px;">
+        <div class="grid-view" style="">
+            <div class="grid-hdiv" style="width: 1170px;">
+                <div class="grid-hbox">
+                    <table class="grid-htable" style="width: 1800px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 195px">操作</th>
+                                <th style="width: 195px">企业名称</th>
+                                <th style="width: 195px">经办人</th>
+                                <th style="width: 195px">最新进度</th>
+                                <th style="width: 195px">生成日期</th>
+                                <th style="width: 195px">完成日期</th>
+                                <th style="width: 195px">状态</th>
+                                <th style="width: 195px">测试</th>
+                                <th style="width: 195px">测试</th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+            <div class="grid-bdiv" style="width: 1170px; height: 200px;">
+
+                    <table class="grid-btable" style="width: 1800px;">
+                        <tbody>
+                            <tr class="firstrow">
+                                <td style="width: 195px"></td>
+                                <td style="width: 195px"></td>
+                                <td style="width: 195px"></td>
+                                <td style="width: 195px"></td>
+                                <td style="width: 195px"></td>
+                                <td style="width: 195px"></td>
+                                <td style="width: 195px"></td>
+                                <td style="width: 195px"></td>
+                                <td style="width: 195px"></td>
+                            </tr>
+                            <tr>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                            </tr>
+                            <tr>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                            </tr>
+                            <tr>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                            </tr>
+                            <tr>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                            </tr>
+                            <tr>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                            </tr>
+                            <tr>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                            </tr>
+                            <tr>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                            </tr>
+                            <tr>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                            </tr>
+                            <tr>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                            </tr>
+                            <tr>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                                <td>测试字体</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(function () {
+            $(".grid-bdiv").scroll(function () {
+                var scrollLeft = $(this).scrollLeft();
+
+                $(".grid-hdiv").scrollLeft(scrollLeft);
+            })
+        })
+    </script>
+
+
+
+
+</body>
+</html>
