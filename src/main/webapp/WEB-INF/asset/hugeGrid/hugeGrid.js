@@ -48,7 +48,7 @@ $(function () {
                 rowNumber: true,
                 rowNumberWidth: 30,
                 height: 500,
-                shrinkToFit: true
+//                shrinkToFit: true
 //                rowAttr: function (rowData, rowId, options) {
 //                    return {
 //                        "data-row-name": rowId
