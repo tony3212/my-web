@@ -6,6 +6,7 @@
  * @property {? object} colModel.formatoptions 格式配置项
  * @property {string} colModel.align 对齐方式, left,center,right中的一个值
  * @property {number} colModel.width 宽度，列的宽度
+ * @property {boolean} colModel.shrinkToFit 当table的宽度与所有可见列宽总和不等时，是否参与比例缩放
  * @property {? object | function} colModel.cellStyle 单元格样式
  * @property {? string | function} colModel.cellClass 单元格class
  * @property {? string | object | function} colModel.cellAttr 单元格属性
@@ -18,7 +19,7 @@
  * @property {number} option.rowNumberWidth 序列号的宽度
  * @property {string} option.height 表格高度
  * @property {string | integer} option.width 表格宽度c
- * @property {boolean} option.shrinkToFit
+ * @property {boolean} option.shrinkToFit 当table的宽度与所有可见列宽总和不等时，是否按比例缩放
  * @property {?number} option.scrollWidth 滚动条的宽度
  * @property {string | object | function} option.rowAttr 行dom的属性
  * @property {string | object | function} option.rowClass 行dom的class
@@ -282,8 +283,9 @@
             var self = this,
                 width = config["width"],
                 renderModel = config.renderModel,
-                colModel = renderModel.colModel,
-                gridWidth, tableWidth, allColWidth = 0, shrinkToFit;
+                colModel = renderModel.colModel, defaultColModel, rowNumberCol,
+                gridWidth, tableWidth, shrinkToFit,
+                allColWidth = 0, allNotShrinkToFitWidth = 0, ratio;
 
             if (width === "auto") {
                 gridWidth = $(self.context).innerWidth();
@@ -291,25 +293,36 @@
                 gridWidth = config.width;
             }
 
-            $.each(colModel, function (index, cellModel) {
-                var align = cellModel.align, formatter = cellModel.formatter;
+            // 当要显示序号时，往colModel插入序号的colModel
+            if (config.rowNumber) {
+                rowNumberCol = this._getRowNumberColModel(config)
+                colModel.unshift(rowNumberCol);
+                renderModel.colName.unshift(rowNumberCol.label);
+            }
 
+            defaultColModel = self._defaultColModelConfig();
+            $.each(colModel, function (index, cellModel) {
+                var align = cellModel.align, formatter = cellModel.formatter, col;
+
+                col = $.extend({}, defaultColModel, cellModel);
                 // 处理对齐方式
                 if (align === undefined) {
                     if (formatter === undefined) {
-                        cellModel.align = "left";
+                        col.align = "left";
                     } else if (formatter === "number" || formatter === "integer" || formatter === "currency") {
-                        cellModel.align = "right";
+                        col.align = "right";
                     } else if (formatter === "typeEnum") {
-                        cellModel.align = "center";
+                        col.align = "center";
                     } else {
-                        cellModel.align = "left";
+                        col.align = "left";
                     }
                 }
 
-                // 没有填写宽度时，设置默认宽度
-                cellModel.width === undefined && (cellModel.width = 150);
-                allColWidth += cellModel.width;
+                if (!col.shrinkToFit) {
+                    allNotShrinkToFitWidth += col.width;
+                }
+                colModel[index] = col;
+                allColWidth += col.width;
             });
 
             // 设置表格宽度
@@ -320,14 +333,43 @@
             }
 
             shrinkToFit = config.shrinkToFit;
+            ratio = (tableWidth  - allNotShrinkToFitWidth) / (allColWidth - allNotShrinkToFitWidth);
             $.each(colModel, function (index, cellModel) {
                 var width = cellModel.width;
 
-                cellModel.actualWidth = !shrinkToFit ? width : Math.round(width * tableWidth / allColWidth);
+                if (!shrinkToFit || !cellModel.shrinkToFit) {
+                    cellModel.actualWidth = width;
+                } else {
+                    cellModel.actualWidth = Math.round(width * ratio);
+                }
             });
 
             config.gridWidth = gridWidth;
             config.tableWidth = tableWidth;
+        },
+
+        /**
+         * 获得序号的列配置
+         * @param config
+         * @returns {{name: string, label: string, width: number|*, shrinkToFit: boolean}}
+         * @private
+         */
+        _getRowNumberColModel: function (config) {
+            return {
+                name: "_rowNumber",
+                label: "&nbsp;",
+                width: config.rowNumberWidth,
+                align: "center",
+                shrinkToFit: false
+            };
+        },
+
+        _defaultColModelConfig: function () {
+            return {
+                align: "left",
+                width: 150,
+                shrinkToFit: true
+            };
         }
     };
 

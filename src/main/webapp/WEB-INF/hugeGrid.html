@@ -64,6 +64,7 @@
             border-right: 1px solid #e4e4e4;
             border-bottom: 1px solid #e4e4e4;
             box-sizing: border-box;
+            overflow: hidden;
         }
         .grid-htable .grid-template-row, .grid-btable .grid-template-row{
             height: 0;
@@ -103,9 +104,6 @@
                         [% var templateRowClass = gridInstance.templateRowClass(renderModel); %]
                         [% var headTableStyle = gridInstance.templateRowStyle(renderModel); %]
                         <tr class="grid-template-row">
-                            [% if (renderModel.rowNumber) { %]
-                            <th style="width: 30px;"></th>
-                            [% } %]
                             [% var colName = renderModel.colName; %]
                             [% var colModel = renderModel.colModel; %]
                             [% for (var key in colName) { %]
@@ -120,9 +118,6 @@
                             [% } %]
                         </tr>
                         <tr>
-                            [% if (renderModel.rowNumber) { %]
-                            <th></th>
-                            [% } %]
                             [% var colName = renderModel.colName; %]
                             [% var colModel = renderModel.colModel; %]
                             [% for (var key in colName) { %]
@@ -148,9 +143,6 @@
                 [% var bodyTableStyle = gridInstance.bodyTableStyle(renderModel); %]
                 <table class="[%= bodyTableClass %]" style="[%= bodyTableStyle %]">
                     <tr class="grid-template-row">
-                        [% if (renderModel.rowNumber) { %]
-                        <td style="width: 30px;"></td>
-                        [% } %]
                         [% var colName = renderModel.colName; %]
                         [% var colModel = renderModel.colModel; %]
                         [% for (var key in colName) { %]
@@ -193,9 +185,6 @@
             class="[%= rowClass %]"
             style="[%= rowStyle %]"
         >
-            [% if (renderModel.rowNumber) { %]
-            <td>[%= renderPageModel.startIndex + i + 1%]</td>
-            [% } %]
             [% colModel = renderModel.colModel; %]
             [% for (var j in colModel) { %]
             [%      var colName = colModel[j]["name"]; %]
@@ -210,7 +199,7 @@
                 class="[%= cellClass %]"
                 style="[%= cellStyle %]"
             >
-                [%= cellFormatValue %]
+                [%= colName !== "_rowNumber" ? cellFormatValue : (renderPageModel.startIndex + i + 1) %]
             </td>
             [% } %]
         </tr>

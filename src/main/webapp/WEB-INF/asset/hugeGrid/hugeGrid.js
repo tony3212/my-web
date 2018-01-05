@@ -6,12 +6,13 @@ $(function () {
                 {
                     name: "assitCode",
                     label: "科目编码",
-                    width: 80
+                    width: 150,
+                    shrinkToFit: true
                 },
                 {
                     name: "assitName", 
                     label: "科目名称",
-                    width: 250,
+                    width: 300,
                     cellAttr: function (cellColModel, cellVal, rowData, rowId) {
                         return {
                             "rowId": rowId
@@ -46,9 +47,9 @@ $(function () {
                 colModel: colModel,
                 data: data,
                 rowNumber: true,
-                rowNumberWidth: 30,
+                rowNumberWidth: 35,
                 height: 500,
-//                shrinkToFit: true
+                shrinkToFit: false
 //                rowAttr: function (rowData, rowId, options) {
 //                    return {
 //                        "data-row-name": rowId
