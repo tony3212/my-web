@@ -168,7 +168,7 @@
          */
         _removeMoreThen2Page: function (renderPageModel, pageInfo) {
             var self = this, currentPage, pageDiff = 2,
-                pageSize, totalPage, allRecords, $tbody, preScrollTop,
+                pageSize, totalPage, allRecords, $body, preScrollTop,
                 cachedPage, cachedPageKeys, removeElementHeight = 0,
                 before2PageEndIndex, before2PageEndRowId, $before2PageEndRowEle,
                 after2PageStartIndex, after2PageStartRowId, $after2PageStartRowEle;
@@ -194,11 +194,11 @@
                     removeElementHeight += $(this).outerHeight(true);
                 });
                 log("删除【序号%i】之前的数据，共删除%i个元素", before2PageEndIndex + 1, $preAll.length);
-                $tbody = $(self.getBody());
-                preScrollTop = $tbody.scrollTop();
+                $body = $(self.getBody());
+                preScrollTop = $body.scrollTop();
                 $preAll.remove();
                 // 为了实现无缝滚动（为了往下翻页时不会出现抖动），重新设置scrollTop
-                $tbody.scrollTop(preScrollTop - removeElementHeight);
+                $body.scrollTop(preScrollTop - removeElementHeight);
             }
 
             // 2.删除当前页后两页的数据
@@ -229,7 +229,7 @@
          * @private
          */
         _renderRowData: function (renderPageModel, referenceRowId, position) {
-            var self = this, $bodyTBody, $bodyTable, $referenceElement, trHtml, beforeScrollTop, addedHeight = 0;
+            var self = this, $bodyTBody, $body, $referenceElement, trHtml, beforeScrollTop, addedHeight = 0;
 
             position || (position = "after");
             trHtml = templateUtil.getHTML("outGridDataTemplate", {
@@ -238,7 +238,7 @@
                 gridInstance: self
             });
             $bodyTBody = $(self.getBodyTBody());
-            $bodyTable = $(self.getBodyTable());
+            $body = $(self.getBody());
             $referenceElement = !referenceRowId
                 ? $bodyTBody
                 : $(self.getRowElementByRowId(referenceRowId));
@@ -248,13 +248,13 @@
             } else if (position === "after") {
                 $referenceElement.after(trHtml);
             } else {
-                beforeScrollTop = $bodyTable.scrollTop();
+                beforeScrollTop = $body.scrollTop();
                 $referenceElement.before(trHtml);
                 // 为了实现无缝滚动（为了往上翻页时不会出现抖动），重新设置scrollTop
                 $referenceElement.prevAll().each(function () {
                     addedHeight += $(this).height();
                 });
-                $bodyTable.scrollTop(beforeScrollTop + addedHeight);
+                $body.scrollTop(beforeScrollTop + addedHeight);
             }
         },
 
