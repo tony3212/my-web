@@ -1512,6 +1512,7 @@
     };
 
     Grid.defaults = $.fn.ouiGrid.defaults = {
+        keyName: "id",
         rowNumber: true,
         rowNumWidth: 30,
         width: "auto",
