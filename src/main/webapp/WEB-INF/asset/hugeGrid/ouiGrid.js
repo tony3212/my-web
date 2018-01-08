@@ -2,6 +2,7 @@
  * @type {object} colModel 列配置项
  * @property {string} colModel.name 列的字段名
  * @property {string} colModel.label 列的展示名称
+ * @property {? boolean} colModel.hidden 是否显示列
  * @property {string | function} colModel.formatter 显示值格式器
  * @property {? object} colModel.formatoptions 格式配置项
  * @property {string} colModel.align 对齐方式, left,center,right中的一个值
@@ -285,7 +286,7 @@
                 renderModel = config.renderModel,
                 colModel = renderModel.colModel, defaultColModel, rowNumberCol,
                 gridWidth, tableWidth, shrinkToFit,
-                allColWidth = 0, allNotShrinkToFitWidth = 0, ratio;
+                totalVisibleColWidth = 0, allNotShrinkToFitWidth = 0, ratio;
 
             if (width === "auto") {
                 gridWidth = $(self.context).innerWidth();
@@ -322,18 +323,18 @@
                     allNotShrinkToFitWidth += col.width;
                 }
                 colModel[index] = col;
-                allColWidth += col.width;
+                !col.hidden && (totalVisibleColWidth += col.width);
             });
 
             // 设置表格宽度
             if (config.shrinkToFit) {
                 tableWidth = gridWidth - config.scrollWidth;
             } else {
-                tableWidth = allColWidth;
+                tableWidth = totalVisibleColWidth;
             }
 
             shrinkToFit = config.shrinkToFit;
-            ratio = (tableWidth  - allNotShrinkToFitWidth) / (allColWidth - allNotShrinkToFitWidth);
+            ratio = (tableWidth  - allNotShrinkToFitWidth) / (totalVisibleColWidth - allNotShrinkToFitWidth);
             $.each(colModel, function (index, cellModel) {
                 var width = cellModel.width;
 
@@ -366,6 +367,7 @@
 
         _defaultColModelConfig: function () {
             return {
+                hidden: false,
                 align: "left",
                 width: 150,
                 shrinkToFit: true
@@ -513,9 +515,10 @@
         },
 
         _predefineTemplateCellStyle: function (cellModel) {
-            return styleObject2String({
-                width: cellModel.actualWidth + "px"
-            });
+            var styleObject = {width: cellModel.actualWidth + "px"};
+
+            cellModel.hidden && (styleObject.display = "none");
+            return styleObject2String(styleObject);
         },
 
         templateCellStyle: function (cellModel) {
@@ -539,7 +542,10 @@
         },
 
         _predefineHeadCellStyle: function (cellModel) {
-           return "";
+            var styleObject = {};
+
+            cellModel.hidden && (styleObject.display = "none");
+            return attrObject2String(styleObject);
         },
 
         /**
@@ -841,7 +847,10 @@
          * @private
          */
         _predefineCellStyle: function (cellModel, cellVal, rowData, rowId) {
-            return joinStr(styleObject2String({"text-align" : cellModel.align}));
+            var styleObject = {"text-align" : cellModel.align};
+
+            cellModel.hidden && (styleObject.display = "none");
+            return joinStr(styleObject2String(styleObject));
         },
 
         /**

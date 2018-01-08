@@ -7,7 +7,8 @@ $(function () {
                     name: "assitCode",
                     label: "科目编码",
                     width: 150,
-                    shrinkToFit: true
+                    shrinkToFit: true,
+                    hidden: true
                 },
                 {
                     name: "assitName", 
