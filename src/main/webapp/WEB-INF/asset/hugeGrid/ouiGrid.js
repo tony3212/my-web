@@ -545,7 +545,7 @@
             var styleObject = {};
 
             cellModel.hidden && (styleObject.display = "none");
-            return attrObject2String(styleObject);
+            return styleObject2String(styleObject);
         },
 
         /**
