@@ -93,28 +93,7 @@
         constructor: Grid,
 
         /** 存储数据容器 */
-        store: {
-            option: {
-                keyName: "id",
-                colModel: null,
-                colName: null,
-                data: null
-            },
-            config: {
-                keyName: "id",
-                colModel: null,
-                colName: null,
-                data: null,
-                dataMap: {},
-                pageInfo: {
-                    pageSize: null,
-                    totalPage: null,
-                    allRecords: null,
-                    // 缓存了页面数据
-                    cachedPage: {}
-                }
-            }
-        },
+        store: null,
 
         event: {},
 
@@ -1041,8 +1020,7 @@
             var self = this;
 
             $(self.context).html("");
-            self.context = null;
-            self.setConfig(null);
+            self.store = null;
             self = null;
         },
 
@@ -1052,8 +1030,31 @@
          * @param {option} option
          */
         init: function (gridBox, option) {
-            var self = this, config = self.store.config, rowDataList, dataMap, colModel, colName, renderModel;
+            var self = this, config, rowDataList, dataMap, colModel, colName, renderModel;
 
+            self.store = {
+                option: {
+                    keyName: "id",
+                    colModel: null,
+                    colName: null,
+                    data: null
+                },
+                config: {
+                    keyName: "id",
+                    colModel: null,
+                    colName: null,
+                    data: null,
+                    dataMap: {},
+                    pageInfo: {
+                        pageSize: null,
+                        totalPage: null,
+                        allRecords: null,
+                        // 缓存了页面数据
+                        cachedPage: {}
+                    }
+                }
+            };
+            config = self.store.config
             // 1.设定上下文
             self.context = $(gridBox)[0];
             self.setOption(option);
@@ -1505,6 +1506,8 @@
                 if (pin === "getInstance") {
                     returnValue = gridInstance || null;
                     return false;
+                } else if (pin === "destroy") {
+                    $(this).data("gridInstance", null);
                 }
 
                 fn = gridInstance[pin];
@@ -1521,7 +1524,7 @@
         }
 
         return this.each(function () {
-            var gridInstance = new Grid(this, $.extend(true, {}, $.fn.ouiGrid.defaults, pin));
+            var gridInstance = Grid(this, $.extend(true, {}, $.fn.ouiGrid.defaults, pin));
 
             $(this).data("gridInstance", gridInstance);
         });
