@@ -1036,6 +1036,16 @@
             return $.extend(config["pageInfo"], pageInfo);
         },
 
+        /** 销毁对象 */
+        destory: function () {
+            var self = this;
+
+            $(self.context).html("");
+            self.context = null;
+            self.setConfig(null);
+            self = null;
+        },
+
         /**
          * 初始化
          * @param gridBox
@@ -1491,6 +1501,12 @@
             args = $.makeArray(arguments).slice(1);
             this.each(function () {
                 var gridInstance = $(this).data("gridInstance");
+
+                if (pin === "getInstance") {
+                    returnValue = gridInstance;
+                    return false;
+                }
+
                 fn = gridInstance[pin];
 
                 if (!fn) {
