@@ -1,8 +1,10 @@
 .grid {
     font-family: "\5FAE\8F6F\96C5\9ED1",Arial,sans-serif;
     font-size: 13px;
-    border: 1px solid #ececec;
     overflow: auto;
+    color: #222;
+    background: #ffffff;
+    border: 1px solid #e1e1e1;
 }
 .grid-view {
     position: relative;
@@ -41,6 +43,14 @@
     position: relative;
     overflow: auto;
     text-align: left;
+}
+
+.grid-btable tr.grid-row:nth-child(even) {
+    background-color: #f1f2f6;
+}
+
+.grid-btable tr.grid-row:nth-child(odd) {
+    background-color: #fff;
 }
 
 .grid-btable td {
