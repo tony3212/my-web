@@ -1037,7 +1037,7 @@
         },
 
         /** 销毁对象 */
-        destory: function () {
+        destroy: function () {
             var self = this;
 
             $(self.context).html("");
@@ -1503,7 +1503,7 @@
                 var gridInstance = $(this).data("gridInstance");
 
                 if (pin === "getInstance") {
-                    returnValue = gridInstance;
+                    returnValue = gridInstance || null;
                     return false;
                 }
 
