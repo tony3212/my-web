@@ -41,6 +41,39 @@
         console && console.groupEnd && console.groupEnd.apply(console, arguments);
     }
 
+    function binarySearch(arr, sortValue, sortName) {
+       var index = indexOf(arr, sortValue, sortName);
+
+       return index === -1 ? null : arr[index];
+    }
+
+    function indexOf(arr, sortValue, sortName, from, end) {
+        var mid, midValue;
+
+        from = arguments.length < 4 ? 0 : from;
+        end = arguments.length < 5 ? arr.length - 1 : end;
+        mid = Math.floor((from + end) / 2);
+        midValue = arr[mid][sortName];
+
+        if (midValue === sortValue) {
+            return mid;
+        } else if (midValue < sortValue && arr.length > 1) {
+//             log("mid lower index: %i, matchValue: %s, searchValue: %s", mid, midValue, sortValue, arr[mid]);
+            return indexOf(arr, sortValue, sortName, mid, end);
+        } else if (midValue > sortValue && arr.length > 1) {
+//             log("mid higher index: %i, matchValue: %s, searchValue: %s", mid, midValue, sortValue, arr[mid]);
+            return indexOf(arr, sortValue, sortName, 0, mid);
+        } else {
+            return -1;
+        }
+    }
+
+    function $$(rowId) {
+        return document.getElementById(rowId);
+    }
+
+    var SORT_FIELD = "__index";
+
     /**
      * 将dom的属性对象转成dom显示的字符串
      * @example {name: "name", value:"1"} => name="name" value="1"
@@ -212,7 +245,7 @@
             var self = this, $bodyTBody, $body, $referenceElement, trHtml, beforeScrollTop, addedHeight = 0;
 
             position || (position = "after");
-            trHtml = templateUtil.getHTML("outGridDataTemplate", {
+            trHtml = templateUtil.getHTML("ouiGridDataTemplate", {
                 renderPageModel: renderPageModel,
                 renderModel: self.getRenderModel(),
                 gridInstance: self
@@ -961,9 +994,45 @@
          * @returns {*}
          */
         getRowData: function (rowId) {
-            var dataMap = this.getDataMap();
+            var self = this;
 
-            return rowId ? dataMap[rowId] : dataMap;
+            return rowId ? _.omit(self._getRowDataByRowId(rowId), SORT_FIELD)
+                : _.map(self._getAllRowData(), function (rowData) {
+                    return _.omit(rowData, SORT_FIELD)
+                });
+        },
+
+        /**
+         * 根据行id获取行数据（含索引__index字段）
+         * @param rowId 行id
+         * @returns {*}
+         */
+        _getRowDataByRowId: function (rowId) {
+            var self = this, dataMap = self.getDataMap(),
+                records = self._getAllRowData();
+
+            return binarySearch(records, dataMap[rowId], SORT_FIELD);
+        },
+
+        /**
+         * 根据行id获取在所有数据中的索引
+         * @param rowId
+         * @private
+         */
+        _getIndexByRowId: function (rowId) {
+            var self = this, dataMap = self.getDataMap(),
+                records = self._getAllRowData();
+
+            return indexOf(records, dataMap[rowId], SORT_FIELD);
+        },
+
+        /**
+         * 获得所有数据（含索引__index字段）
+         * @returns {*}
+         * @private
+         */
+        _getAllRowData: function () {
+            return this.getConfig("data");
         },
 
         /**
@@ -992,9 +1061,30 @@
          * @param rowData
          */
         setRowData: function (rowId, rowData) {
-            var self = this;
+            var self = this, $row, index, oldRowData, newRowData, rowHtml;
 
-            $.extend(self.getRowData(rowId), rowData);
+            index = self._getIndexByRowId(rowId);
+            if (index === -1) {
+                throw "can't find rowData rowId:" + rowId;
+            }
+
+            oldRowData = self._getAllRowData()[index];
+            newRowData = $.extend(oldRowData, rowData);
+
+            // 如果已经加在载页面中
+            $row = $($$(rowId));
+            if ($row.length > 0) {
+                rowHtml = templateUtil.getHTML("ouiGridDataTemplate", {
+                    renderPageModel: {
+                        startIndex: index,
+                        endIndex: index,
+                        pageData: [newRowData]
+                    },
+                    renderModel: self.getRenderModel(),
+                    gridInstance: self
+                });
+                $row.replaceWith(rowHtml);
+            }
         },
 
         /**
@@ -1030,7 +1120,7 @@
          * @param {option} option
          */
         init: function (gridBox, option) {
-            var self = this, config, rowDataList, dataMap, colModel, colName, renderModel;
+            var self = this, config, rowDataList, dataMap = {}, colModel, colName, renderModel;
 
             self.store = {
                 option: {
@@ -1071,8 +1161,11 @@
                 height: option.height
             };
             rowDataList = $.extend(true, [], option.data);
-            dataMap = _.indexBy(rowDataList, option.keyName);
-            config = $.extend(true, {}, config, option, {renderModel: renderModel, dataMap: dataMap});
+            _.each(rowDataList, function (rowData, index) {
+                rowData[SORT_FIELD] = index * 1000000;
+                dataMap[rowData[option.keyName]] = rowData[SORT_FIELD];
+            });
+            config = $.extend(true, {}, config, _.omit(option, "data"), {renderModel: renderModel, dataMap: dataMap, data: rowDataList});
             self._initConfig(config);
             self.setConfig(config);
 
