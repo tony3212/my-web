@@ -117,7 +117,8 @@
         return $.makeArray(arguments).join(" ");
     }
 
-    var SORT_FIELD = "__index";
+    var SORT_FIELD = "__order";
+    var ORDER_UNIT = 1000000;
 
     var Grid = function (gridBox, option) {
         return new Grid.fn.init(gridBox, option);
@@ -362,8 +363,8 @@
             config.tableWidth = tableWidth;
         },
 
-        _getRowIdIndexMap: function () {
-            return this.getConfig("rowIdIndexMap");
+        _getRowIdOrderMap: function () {
+            return this.getConfig("rowIdOrderMap");
         },
 
         /**
@@ -372,10 +373,10 @@
          * @returns {*}
          */
         _getRowDataByRowId: function (rowId) {
-            var self = this, rowIdIndexMap = self._getRowIdIndexMap(),
+            var self = this, rowIdOrderMap = self._getRowIdOrderMap(),
                 records = self._getAllRowData();
 
-            return binarySearch(records, rowIdIndexMap[rowId], SORT_FIELD);
+            return binarySearch(records, rowIdOrderMap[rowId], SORT_FIELD);
         },
 
         /**
@@ -384,10 +385,10 @@
          * @private
          */
         _getIndexByRowId: function (rowId) {
-            var self = this, rowIdIndexMap = self._getRowIdIndexMap(),
+            var self = this, rowIdOrderMap = self._getRowIdOrderMap(),
                 records = self._getAllRowData();
 
-            return indexOf(records, rowIdIndexMap[rowId], SORT_FIELD);
+            return indexOf(records, rowIdOrderMap[rowId], SORT_FIELD);
         },
 
         /**
@@ -1013,7 +1014,6 @@
             return this.getConfig()["renderModel"];
         },
 
-
         /**
          * 根据行id查找行元素
          * @param rowId
@@ -1036,7 +1036,6 @@
                     return _.omit(rowData, SORT_FIELD)
                 });
         },
-
 
         /**
          * 根据行数据取行id
@@ -1091,6 +1090,64 @@
         },
 
         /**
+         * 添加数据
+         * @param rowData 行数据
+         * @param position 位置
+         * @param refRowId
+         */
+        addRowData: function (rowData, position, refRowId) {
+            var self = this, allRowData, lastRowData,
+                beforeIndex, afterIndex, beforeOrder, afterOrder,
+                newRowData, order;
+
+            position || (position = "last");
+            allRowData = self._getAllRowData();
+            if (!refRowId) {
+                lastRowData = _.last(allRowData);
+                refRowId = self.getRowIdByRowData(lastRowData);
+            }
+
+            switch (position) {
+                case "last":
+                    beforeIndex = self._getAllRowData().length - 1;
+                    break;
+                case "first":
+                    beforeIndex = -1;
+                    break;
+                case "after":
+                    beforeIndex = self._getIndexByRowId(refRowId);
+                    break;
+                case "before":
+                    beforeIndex = self._getIndexByRowId(refRowId) - 1;
+                    break;
+            }
+
+            // 计算排序号
+            afterIndex = beforeIndex + 1;
+            beforeOrder = beforeIndex < 0 ? 0 : allRowData[beforeIndex][SORT_FIELD];
+            afterOrder = afterIndex >= lastRowData.length ? (afterIndex + 1) * ORDER_UNIT : allRowData[afterIndex][SORT_FIELD];
+            order = Math.floor((beforeOrder + afterOrder) / 2);
+
+            refRowId = self.getRowIdByRowData(allRowData[beforeIndex < 0 ? 0 : beforeIndex]);
+
+            // 插入数据
+            newRowData = $.extend(true, {}, rowData, _.object([SORT_FIELD], [order]));
+            allRowData.splice(beforeOrder < 0 ? 0 : beforeOrder, 0, 1, newRowData);
+
+            // 已经加载在页面中，则在页面中显示
+            if ($$(refRowId).length > 0) {
+                self._renderRowData({
+                    renderPageModel: {
+                        startIndex: null,
+                        endIndex: null,
+                        pageData: [newRowData]
+                    },
+                    gridInstance: self
+                }, refRowId, "after");
+            }
+        },
+
+        /**
          * 获得分页信息
          * @returns {*}
          */
@@ -1123,7 +1180,7 @@
          * @param {option} option
          */
         init: function (gridBox, option) {
-            var self = this, config, rowDataList, rowIdIndexMap = {}, colModel, colName, renderModel;
+            var self = this, config, rowDataList, rowIdOrderMap = {}, colModel, colName, renderModel;
 
             self.store = {
                 option: {
@@ -1137,7 +1194,7 @@
                     colModel: null,
                     colName: null,
                     data: null,
-                    rowIdIndexMap: {},
+                    rowIdOrderMap: {},
                     pageInfo: {
                         pageSize: null,
                         totalPage: null,
@@ -1165,12 +1222,12 @@
             };
             rowDataList = $.extend(true, [], option.data);
             _.each(rowDataList, function (rowData, index) {
-                rowData[SORT_FIELD] = index * 1000000;
-                rowIdIndexMap[rowData[option.keyName]] = rowData[SORT_FIELD];
+                rowData[SORT_FIELD] = (index + 1) * ORDER_UNIT;
+                rowIdOrderMap[rowData[option.keyName]] = rowData[SORT_FIELD];
             });
             config = $.extend(true, {}, config, _.omit(option, "data"), {
                 renderModel: renderModel,
-                rowIdIndexMap: rowIdIndexMap,
+                rowIdOrderMap: rowIdOrderMap,
                 data: rowDataList
             });
             self._initConfig(config);
@@ -1304,9 +1361,7 @@
             return $("." + this.classes.head, this.context).get(0);
         },
 
-        /**
-         * 获得表体元素
-         */
+        /** 获得表体元素 */
         getBody: function () {
             return $("." + this.classes.body, this.context).get(0);
         },
@@ -1317,6 +1372,11 @@
 
         getBodyTBody: function () {
             return $("tbody", this.getBody()).get(0);
+        },
+
+        /** 获得列定义 */
+        getColModel: function () {
+            return this.getConfig("colModel");
         },
 
         /**

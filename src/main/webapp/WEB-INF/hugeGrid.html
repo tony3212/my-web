@@ -112,7 +112,7 @@
             [% var rowClass = gridInstance.rowClass(rowData, rowId); %]
             [% var rowStyle = gridInstance.rowStyle(rowData, rowId); %]
 
-        <tr id="[%= rowData[renderModel.keyName] %]"
+        <tr id="[%= gridInstance.getRowIdByRowData(rowData) %]"
             [%= rowAttr %]
             class="[%= rowClass %]"
             style="[%= rowStyle %]"
