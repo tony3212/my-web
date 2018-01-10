@@ -164,7 +164,7 @@
 
             // 1.删除当前页前两页的数据
             if (before2PageEndIndex != null && before2PageEndIndex >= 0) {
-                before2PageEndRowId = self.getRowIdByRowData(self.getRowDataByIndex(before2PageEndIndex));
+                before2PageEndRowId = self.getRowIdByRowData(self._getRowDataByIndex(before2PageEndIndex));
                 $before2PageEndRowEle = $(self.getRowElementByRowId(before2PageEndRowId));
                 var $preAll = $before2PageEndRowEle.prevAll();
                 $preAll.each(function () {
@@ -180,7 +180,7 @@
 
             // 2.删除当前页后两页的数据
             if (after2PageStartIndex != null && after2PageStartIndex <= allRecords.length) {
-                after2PageStartRowId = self.getRowIdByRowData(self.getRowDataByIndex(after2PageStartIndex));
+                after2PageStartRowId = self.getRowIdByRowData(self._getRowDataByIndex(after2PageStartIndex));
                 $after2PageStartRowEle = $(self.getRowElementByRowId(after2PageStartRowId));
                 var $nextAll = $after2PageStartRowEle.nextAll();
                 log("删除【序号%i】之后的数据，共删除%i个元素", after2PageStartIndex + 1, $nextAll.length);
@@ -721,7 +721,7 @@
          * @param index 索引
          * @returns {*}
          */
-        getRowDataByIndex: function (index) {
+        _getRowDataByIndex: function (index) {
             return this.getConfig("data")[index];
         },
 
@@ -939,8 +939,8 @@
             refRowId = cachedPageSize === 0
                 ? null
                 : position === "before"
-                    ? self.getRowIdByRowData(self.getRowDataByIndex(cachedPage[self.getCachedMinPageNo(cachedPage)].startIndex))
-                    : self.getRowIdByRowData(self.getRowDataByIndex(cachedPage[self.getCachedMaxPageNo(cachedPage)].endIndex));
+                    ? self.getRowIdByRowData(self._getRowDataByIndex(cachedPage[self.getCachedMinPageNo(cachedPage)].startIndex))
+                    : self.getRowIdByRowData(self._getRowDataByIndex(cachedPage[self.getCachedMaxPageNo(cachedPage)].endIndex));
             renderPageModel = self.getRenderPageModel(loadingPage);
             log("第%i页的起始【序号%i】，结束【序号%i】，共%i条数据",
                 loadingPage,
