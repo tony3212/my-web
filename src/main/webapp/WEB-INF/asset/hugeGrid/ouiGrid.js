@@ -68,11 +68,10 @@
         }
     }
 
-    function $$(rowId) {
-        return document.getElementById(rowId);
+    /** 根据id查找元素 */
+    function $$(id) {
+        return document.getElementById(id);
     }
-
-    var SORT_FIELD = "__index";
 
     /**
      * 将dom的属性对象转成dom显示的字符串
@@ -117,6 +116,8 @@
     function joinClass() {
         return $.makeArray(arguments).join(" ");
     }
+
+    var SORT_FIELD = "__index";
 
     var Grid = function (gridBox, option) {
         return new Grid.fn.init(gridBox, option);
@@ -359,6 +360,43 @@
 
             config.gridWidth = gridWidth;
             config.tableWidth = tableWidth;
+        },
+
+        _getRowIdIndexMap: function () {
+            return this.getConfig("rowIdIndexMap");
+        },
+
+        /**
+         * 根据行id获取行数据（含索引__index字段）
+         * @param rowId 行id
+         * @returns {*}
+         */
+        _getRowDataByRowId: function (rowId) {
+            var self = this, rowIdIndexMap = self._getRowIdIndexMap(),
+                records = self._getAllRowData();
+
+            return binarySearch(records, rowIdIndexMap[rowId], SORT_FIELD);
+        },
+
+        /**
+         * 根据行id获取在所有数据中的索引
+         * @param rowId
+         * @private
+         */
+        _getIndexByRowId: function (rowId) {
+            var self = this, rowIdIndexMap = self._getRowIdIndexMap(),
+                records = self._getAllRowData();
+
+            return indexOf(records, rowIdIndexMap[rowId], SORT_FIELD);
+        },
+
+        /**
+         * 获得所有数据（含索引__index字段）
+         * @returns {*}
+         * @private
+         */
+        _getAllRowData: function () {
+            return this.getConfig("data");
         },
 
         /**
@@ -975,9 +1013,6 @@
             return this.getConfig()["renderModel"];
         },
 
-        getDataMap: function () {
-            return this.getConfig("dataMap");
-        },
 
         /**
          * 根据行id查找行元素
@@ -1002,38 +1037,6 @@
                 });
         },
 
-        /**
-         * 根据行id获取行数据（含索引__index字段）
-         * @param rowId 行id
-         * @returns {*}
-         */
-        _getRowDataByRowId: function (rowId) {
-            var self = this, dataMap = self.getDataMap(),
-                records = self._getAllRowData();
-
-            return binarySearch(records, dataMap[rowId], SORT_FIELD);
-        },
-
-        /**
-         * 根据行id获取在所有数据中的索引
-         * @param rowId
-         * @private
-         */
-        _getIndexByRowId: function (rowId) {
-            var self = this, dataMap = self.getDataMap(),
-                records = self._getAllRowData();
-
-            return indexOf(records, dataMap[rowId], SORT_FIELD);
-        },
-
-        /**
-         * 获得所有数据（含索引__index字段）
-         * @returns {*}
-         * @private
-         */
-        _getAllRowData: function () {
-            return this.getConfig("data");
-        },
 
         /**
          * 根据行数据取行id
@@ -1120,7 +1123,7 @@
          * @param {option} option
          */
         init: function (gridBox, option) {
-            var self = this, config, rowDataList, dataMap = {}, colModel, colName, renderModel;
+            var self = this, config, rowDataList, rowIdIndexMap = {}, colModel, colName, renderModel;
 
             self.store = {
                 option: {
@@ -1134,7 +1137,7 @@
                     colModel: null,
                     colName: null,
                     data: null,
-                    dataMap: {},
+                    rowIdIndexMap: {},
                     pageInfo: {
                         pageSize: null,
                         totalPage: null,
@@ -1163,9 +1166,13 @@
             rowDataList = $.extend(true, [], option.data);
             _.each(rowDataList, function (rowData, index) {
                 rowData[SORT_FIELD] = index * 1000000;
-                dataMap[rowData[option.keyName]] = rowData[SORT_FIELD];
+                rowIdIndexMap[rowData[option.keyName]] = rowData[SORT_FIELD];
             });
-            config = $.extend(true, {}, config, _.omit(option, "data"), {renderModel: renderModel, dataMap: dataMap, data: rowDataList});
+            config = $.extend(true, {}, config, _.omit(option, "data"), {
+                renderModel: renderModel,
+                rowIdIndexMap: rowIdIndexMap,
+                data: rowDataList
+            });
             self._initConfig(config);
             self.setConfig(config);
 
