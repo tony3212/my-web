@@ -7,8 +7,7 @@ $(function () {
                     name: "assitCode",
                     label: "科目编码",
                     width: 150,
-                    shrinkToFit: true,
-                    hidden: true
+                    shrinkToFit: true
                 },
                 {
                     name: "assitName", 
@@ -65,6 +64,16 @@ $(function () {
 //                    };
 //                }
             });
+        },
+
+        addRowData: function () {
+            var rowData = {
+                assitCode: "1002201_075_1",
+                assitName: "测试新增",
+                subjectOrient: "0",
+                endAmt: 1000
+            };
+            $("#grid").ouiGrid("addRowData", rowData, "after", "112201_075");
         }
     });
 

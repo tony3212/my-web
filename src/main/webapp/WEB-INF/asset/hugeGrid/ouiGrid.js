@@ -447,6 +447,34 @@
                 width: 150,
                 shrinkToFit: true
             };
+        },
+
+        /**
+         * 重新加载缓存的页面
+         * @private
+         */
+        _refreshCachedPage: function () {
+            var self = this, $body, allRowData, cachedPage, originScrollTop;
+
+            cachedPage = self.getCachedPageNumber();
+            allRowData = self._getAllRowData();
+            $body = $(self.getBody());
+            // 1.记录增加前的位置
+            originScrollTop = $body.scrollTop();
+            // 2.重新生成分页信息
+            self.extendPageInfo($.extend(self._pageData(allRowData), {cachedPage: {}}));
+            // 3.将页面生成的内容清空
+            $("." + this.classes.bodyRow).remove();
+            // 标记为滚动时不翻页（下面重新渲染页面可能会造成页面滚动）
+            self._setStore("disableScrollPage", true);
+            // 4.重新加载数据
+            _.each(cachedPage, function (pageNumber) {
+                self._loadPage(+pageNumber);
+            });
+            // 5.还原到原先位置
+            $body.scrollTop(originScrollTop);
+            // 还原滚动时可翻页
+            self._setStore("disableScrollPage", false);
         }
     };
 
@@ -1142,25 +1170,18 @@
             // 计算排序号
             afterIndex = beforeIndex + 1;
             beforeOrder = beforeIndex < 0 ? 0 : allRowData[beforeIndex][SORT_FIELD];
-            afterOrder = afterIndex >= lastRowData.length ? (afterIndex + 1) * ORDER_UNIT : allRowData[afterIndex][SORT_FIELD];
+            afterOrder = afterIndex >= allRowData.length ? (afterIndex + 1) * ORDER_UNIT : allRowData[afterIndex][SORT_FIELD];
             order = Math.floor((beforeOrder + afterOrder) / 2);
 
             refRowId = self.getRowIdByRowData(allRowData[beforeIndex < 0 ? 0 : beforeIndex]);
 
             // 插入数据
             newRowData = $.extend(true, {}, rowData, _.object([SORT_FIELD], [order]));
-            allRowData.splice(beforeOrder < 0 ? 0 : beforeOrder, 0, 1, newRowData);
+            allRowData.splice(beforeIndex + 1, 0, newRowData);
 
             // 已经加载在页面中，则在页面中显示
-            if ($$(refRowId).length > 0) {
-                self._renderRowData({
-                    renderPageModel: {
-                        startIndex: null,
-                        endIndex: null,
-                        pageData: [newRowData]
-                    },
-                    gridInstance: self
-                }, refRowId, "after");
+            if ($($$(refRowId)).length > 0) {
+                self._refreshCachedPage($($$(refRowId)));
             }
         },
 
@@ -1287,6 +1308,10 @@
                         nearlyReachTop = false, nearlyReachBottom = false,
                         scrollHeight, scrollInnerHeight;
 
+                    if (self._getStore("disableScrollPage")) {
+                        return;
+                    }
+
                     scrollTop = $tBody.scrollTop();
                     // 向上滚动
                     if (scrollTop < lastScrollTop) {
@@ -1340,10 +1365,13 @@
          * @returns {string[]}
          */
         getCachedPageNumber: function (cachedPage) {
-            var self = this;
+            var self = this, pageArray;
 
             cachedPage || (cachedPage = self.getPageInfo()["cachedPage"]);
-            return _.keys(cachedPage).sort(function (numA, numB) {
+            pageArray = _.map(_.keys(cachedPage), function (pageStr) {
+                return +pageStr;
+            });
+            return pageArray.sort(function (numA, numB) {
                 return Number(numA) - Number(numB);
             });
         },
