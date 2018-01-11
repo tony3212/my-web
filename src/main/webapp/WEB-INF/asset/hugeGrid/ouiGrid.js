@@ -1168,7 +1168,7 @@
          * @returns {Array}
          */
         getEditedRowData: function () {
-            return this._getNotProtectRowData(self._getEditedRowData());
+            return this._getNotProtectRowData(this._getEditedRowData());
         },
 
         /**
