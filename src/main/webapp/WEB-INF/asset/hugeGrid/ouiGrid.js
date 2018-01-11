@@ -19,6 +19,7 @@
  * @property {boolean} option.rowNumber 是否展示序列号
  * @property {number} option.rowNumberWidth 序列号的宽度
  * @property {string} option.height 表格高度
+ * @property {?string} option.stateName 状态字段名称（代表是否编辑过的状态名称）
  * @property {string | integer} option.width 表格宽度c
  * @property {boolean} option.shrinkToFit 当table的宽度与所有可见列宽总和不等时，是否按比例缩放
  * @property {?number} option.scrollWidth 滚动条的宽度
@@ -118,7 +119,27 @@
     }
 
     var SORT_FIELD = "__order";
+    var STATE_FIELD = "__state";
     var ORDER_UNIT = 1000000;
+
+    /**
+     * @constant
+     * @enum
+     * @type {{INITIAL: number, NEW: number, DELETED: number, MODIFIED: number}}
+     */
+    var STATE = {
+        /** 0 = 初始状态 */
+        INITIAL: 0,
+
+        /** 1 = 新增的状态 */
+        NEW: 1,
+
+        /** 2 = 删除的状态 */
+        DELETED: 2,
+
+        /** 3 = 修改过的状态 */
+        MODIFIED: 3
+    };
 
     var Grid = function (gridBox, option) {
         return new Grid.fn.init(gridBox, option);
@@ -367,8 +388,38 @@
             return this.getConfig("rowIdOrderMap");
         },
 
+        /** 获得状态的字段名称 */
+        _getStateName: function () {
+            var stateName = this.getConfig("rowStateName");
+
+            return stateName ? stateName : STATE_FIELD;
+        },
+
+        /** 数据是否未修改 */
+        _isInitial: function (rowData) {
+            var stateName = this._getStateName();
+
+            return !rowData[stateName] || rowData[stateName] === STATE.INITIAL;
+        },
+
+        /** 如果为初化状态则更改为修改状态 */
+        _setModifiedIfInitial: function (rowData) {
+            this._isInitial(rowData) && (rowData[this._getStateName()] = STATE.MODIFIED);
+        },
+
         /**
-         * 根据行id获取行数据（含索引__ORDER字段）
+         * 如果给定的数据没有状态，则将数据设置为新增状态
+         * @param rowData
+         * @private
+         */
+        _setNewIfNoState: function (rowData) {
+            var stateName = this._getStateName();
+
+            rowData[stateName] === undefined && (rowData[stateName] = STATE.NEW);
+        },
+
+        /**
+         * 根据行id获取行数据（含索引__state、__state字段）
          * @param rowId 行id
          * @returns {*}
          */
@@ -388,9 +439,9 @@
         _getNotProtectRowData: function (rowData) {
             return $.isArray(rowData)
                 ? _.map(rowData, function (rowData) {
-                    return _.omit(rowData, SORT_FIELD)
+                    return _.omit(rowData, SORT_FIELD, STATE_FIELD)
                 })
-                : _.omit(rowData, SORT_FIELD);
+                : _.omit(rowData, SORT_FIELD, STATE_FIELD);
         },
 
         /**
@@ -406,7 +457,7 @@
         },
 
         /**
-         * 获得所有数据（含索引__ORDER字段）
+         * 获得所有数据（含索引__state、__state字段）
          * @returns {*}
          * @private
          */
@@ -416,12 +467,24 @@
 
 
         /**
-         * 根据索引获得行数据（含索引__ORDER字段）
+         * 根据索引获得行数据（含索引__state、__state字段）
          * @param index 索引
          * @returns {*}
          */
         _getRowDataByIndex: function (index) {
             return this._getAllRowData()[index];
+        },
+
+        /**
+         * 获得编辑过（新增、修改、删除）的数据（含索引__state、__state字段）
+         * @returns {Array}
+         */
+        _getEditedRowData: function () {
+            var self = this;
+
+            return _.filter(this._getAllRowData(), function (rowData) {
+                return !self._isInitial(rowData);
+            });
         },
 
         /**
@@ -1076,6 +1139,15 @@
         },
 
         /**
+         * 根据行数据取行id
+         * @param rowData
+         * @returns {*}
+         */
+        getRowIdByRowData: function (rowData) {
+            return rowData[this.getConfig("keyName")];
+        },
+
+        /**
          * 根据行id获取行数据, 没有传时，返回所有数据
          * @param rowId 行id
          * @returns {*}
@@ -1086,20 +1158,17 @@
             return self._getNotProtectRowData(rowId ? self._getRowDataByRowId(rowId) : self._getAllRowData());
         },
 
-        /**
-         * 根据行数据取行id
-         * @param rowData
-         * @returns {*}
-         */
-        getRowIdByRowData: function (rowData) {
-            var self = this, keyName = self.getConfig("keyName");
-
-            return rowData[keyName];
-        },
-
-        /** 根据索引查行数据（不含__order字段） */
+        /** 根据索引查行数据（不含__state、__state字段） */
         getRowDataByIndex: function (index) {
             return this._getNotProtectRowData(this._getRowDataByIndex(index));
+        },
+
+        /**
+         * 获得编辑过（新增、修改、删除）的数据
+         * @returns {Array}
+         */
+        getEditedRowData: function () {
+            return this._getNotProtectRowData(self._getEditedRowData());
         },
 
         /**
@@ -1116,9 +1185,12 @@
             }
 
             oldRowData = self._getAllRowData()[index];
+            // 更新数据
             newRowData = $.extend(oldRowData, rowData);
+            // 如果是未修改状态，则标记为修改状态
+            self._setModifiedIfInitial(newRowData)
 
-            // 如果已经加在载页面中
+            // 如果已经加在载页面中，则重新渲染
             $row = $($$(rowId));
             if ($row.length > 0) {
                 rowHtml = templateUtil.getHTML("ouiGridDataTemplate", {
@@ -1175,8 +1247,11 @@
 
             refRowId = self.getRowIdByRowData(allRowData[beforeIndex < 0 ? 0 : beforeIndex]);
 
-            // 插入数据
+            // 初始化数据
             newRowData = $.extend(true, {}, rowData, _.object([SORT_FIELD], [order]));
+            // 如果给定的数据中没有状态，则将数据置为新增状态
+            self._setNewIfNoState(newRowData);
+            // 插入数据
             allRowData.splice(beforeIndex + 1, 0, newRowData);
 
             // 已经加载在页面中，则在页面中显示
@@ -1417,7 +1492,10 @@
             return $("tbody", this.getBody()).get(0);
         },
 
-        /** 获得列定义 */
+        /**
+         * 获得列定义
+         * @returns {Array}
+         */
         getColModel: function () {
             return this.getConfig("colModel");
         },
