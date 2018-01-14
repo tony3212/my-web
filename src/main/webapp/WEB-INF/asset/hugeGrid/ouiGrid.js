@@ -60,10 +60,10 @@
             return mid;
         } else if (midValue < sortValue && arr.length > 1) {
 //             log("mid lower index: %i, matchValue: %s, searchValue: %s", mid, midValue, sortValue, arr[mid]);
-            return indexOf(arr, sortValue, sortName, mid, end);
+            return indexOf(arr, sortValue, sortName, mid + 1, end);
         } else if (midValue > sortValue && arr.length > 1) {
 //             log("mid higher index: %i, matchValue: %s, searchValue: %s", mid, midValue, sortValue, arr[mid]);
-            return indexOf(arr, sortValue, sortName, 0, mid);
+            return indexOf(arr, sortValue, sortName, 0, mid - 1);
         } else {
             return -1;
         }
