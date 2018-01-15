@@ -538,6 +538,51 @@
             $body.scrollTop(originScrollTop);
             // 还原滚动时可翻页
             self._setStore("disableScrollPage", false);
+        },
+
+        /**
+         * 根据colModel重新调整每列的宽度
+         * @private
+         */
+        _resizeWidth: function () {
+            var self = this, config = self.getConfig(),
+                allNotShrinkToFitWidth = 0, totalVisibleColWidth = 0,
+                tableWidth, shrinkToFit, ratio,
+                $headTemplateRow, $bodyTemplateRow;
+
+            $.each(colModel, function (index, col) {
+                if (!col.shrinkToFit) {
+                    allNotShrinkToFitWidth += col.width;
+                }
+                !col.hidden && (totalVisibleColWidth += col.width);
+            });
+
+            // 1.计算表格宽度
+            tableWidth = config.shrinkToFit ? config.tableWidth : totalVisibleColWidth;
+
+            // 2.计算每列的宽度
+            shrinkToFit = config.shrinkToFit;
+            ratio = (tableWidth - allNotShrinkToFitWidth) / (totalVisibleColWidth - allNotShrinkToFitWidth);
+            $.each(colModel, function (index, cellModel) {
+                cellModel.actualWidth = (!shrinkToFit || !cellModel.shrinkToFit)
+                    ? cellModel.width : Math.round(cellModel.width * ratio);
+                if (!cellModel.hidden) {
+                    log("name: %s, width: %i", cellModel.name, cellModel.actualWidth);
+                }
+            });
+
+            // 4.设置每列的宽度
+            $headTemplateRow = $(self.getHeadTemplateRow());
+            $bodyTemplateRow = $(self.getBodyTemplateRow())
+            $.each(colModel, function (index, col) {
+               if (!col.hidden) {
+                   $('[data-name="' + col.name + '"]', $headTemplateRow).css("width",  col.actualWidth + "px");
+                   $('[data-name="' + col.name + '"]', $bodyTemplateRow).css("width",  col.actualWidth + "px");
+               }
+            });
+            // 5.设置表格宽度
+            $(self.getHeadTable()).css("width",  tableWidth + "px");
+            $(self.getBodyTable()).css("width",  tableWidth + "px");
         }
     };
 
@@ -1479,6 +1524,18 @@
             return $("." + this.classes.head, this.context).get(0);
         },
 
+        getHeadTable: function () {
+            return $("." + this.classes.headTable, this.getHead());
+        },
+
+        getHeadTemplateRow: function () {
+            return $("." + this.classes.templateRow, this.getHead());
+        },
+
+        getBodyTemplateRow: function () {
+            return $("." + this.classes.templateRow, this.getBodyTBody());
+        },
+
         /** 获得表体元素 */
         getBody: function () {
             return $("." + this.classes.body, this.context).get(0);
@@ -1604,6 +1661,46 @@
                 endIndex: endIndex,
                 pageData: allRecords.slice(startIndex, endIndex + 1)
             };
+        },
+
+        /**
+         * 显示或隐藏列
+         * @param {string | Array} colNameList 列名称
+         * @param visible 是否显示
+         */
+        toggleView: function (colNameList, visible) {
+            var self = this, colModel, method;
+
+            colNameList = $.isArray(colNameList) ? colNameList : [colNameList];
+            method  = visible ? "show" : "hide";
+            // 1.找出该列的配制项，将将该配制项的hidden置为true
+            colModel =  self.getRenderModel().colModel;
+
+            _.each(colModel, function (cellModel) {
+                if (_.contains(colNameList, cellModel.name)) {
+                    cellModel.hidden = !visible;
+
+                    $('[data-name="' + cellModel.name + '"]', $(self.getHead()))[method]();
+                    $('[data-name="' + cellModel.name + '"]', $(self.getBodyTBody()))[method]();
+                }
+            });
+            self._resizeWidth();
+        },
+
+        /**
+         * 隐藏列
+         * @param {string | Array} colNameList 列名称
+         */
+        hideCol: function (colNameList) {
+            this.toggleView(colNameList, false);
+        },
+        
+        /**
+         * 显示列
+         * @param {string | Array} colNameList 列名称
+         */
+        showCol: function (colNameList) {
+            this.toggleView(colNameList, true);
         }
     });
     Grid.prototype.init.prototype = Grid.prototype;
