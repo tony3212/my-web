@@ -36,9 +36,8 @@
                         [% var templateRowClass = gridInstance.templateRowClass(renderModel); %]
                         [% var headTableStyle = gridInstance.templateRowStyle(renderModel); %]
                         <tr class="grid-template-row">
-                            [% var colName = renderModel.colName; %]
                             [% var colModel = renderModel.colModel; %]
-                            [% for (var key in colName) { %]
+                            [% for (var key in colModel) { %]
                             [%      var cellModel = colModel[key]; %]
                             [%      var templateCellClass = gridInstance.templateCellClass(cellModel); %]
                             [%      var templateCellStyle = gridInstance.templateCellStyle(cellModel); %]
@@ -50,16 +49,15 @@
                             [% } %]
                         </tr>
                         <tr>
-                            [% var colName = renderModel.colName; %]
                             [% var colModel = renderModel.colModel; %]
-                            [% for (var key in colName) { %]
+                            [% for (var key in colModel) { %]
                             [%      var cellClass = gridInstance.headCellClass(colModel[key]); %]
                             [%      var cellStyle = gridInstance.headCellStyle(colModel[key]); %]
                             <th data-name="[%= colModel[key].name %]"
                                 class="[%= cellClass %]"
                                 style="[%= cellStyle %]"
                             >
-                                [%= colName[key] %]
+                                [%= colModel[key].label %]
                             </th>
                             [% } %]
                         </tr>
@@ -75,9 +73,8 @@
                 [% var bodyTableStyle = gridInstance.bodyTableStyle(renderModel); %]
                 <table class="[%= bodyTableClass %]" style="[%= bodyTableStyle %]">
                     <tr class="grid-template-row">
-                        [% var colName = renderModel.colName; %]
                         [% var colModel = renderModel.colModel; %]
-                        [% for (var key in colName) { %]
+                        [% for (var key in colModel) { %]
                         [%      var cellModel = colModel[key]; %]
                         [%      var templateCellClass = gridInstance.templateCellClass(cellModel); %]
                         [%      var templateCellStyle = gridInstance.templateCellStyle(cellModel); %]

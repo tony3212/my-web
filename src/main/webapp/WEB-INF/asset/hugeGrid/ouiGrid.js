@@ -19,8 +19,9 @@
  * @property {boolean} option.rowNumber 是否展示序列号
  * @property {number} option.rowNumberWidth 序列号的宽度
  * @property {string} option.height 表格高度
+ * @property {string | integer} option.width 表格宽度
+ * @property {?[]} option.groupHeaders 分组信息
  * @property {?string} option.stateName 状态字段名称（代表是否编辑过的状态名称）
- * @property {string | integer} option.width 表格宽度c
  * @property {boolean} option.shrinkToFit 当table的宽度与所有可见列宽总和不等时，是否按比例缩放
  * @property {?number} option.scrollWidth 滚动条的宽度
  * @property {string | object | function} option.rowAttr 行dom的属性
@@ -319,6 +320,7 @@
             var self = this,
                 width = config["width"],
                 renderModel = config.renderModel,
+                groupHeaders = config.groupHeaders,
                 colModel = renderModel.colModel, defaultColModel, rowNumberCol,
                 gridWidth, tableWidth, shrinkToFit,
                 totalVisibleColWidth = 0, allNotShrinkToFitWidth = 0, ratio;
@@ -333,7 +335,6 @@
             if (config.rowNumber) {
                 rowNumberCol = this._getRowNumberColModel(config)
                 colModel.unshift(rowNumberCol);
-                renderModel.colName.unshift(rowNumberCol.label);
             }
 
             defaultColModel = self._defaultColModelConfig();
@@ -1368,11 +1369,9 @@
 
             // 2.初始化相关数据
             colModel = option.colModel;
-            colName = _.pluck(colModel, "label");
             renderModel = {
                 keyName: option.keyName,
                 colModel: colModel,
-                colName: colName,
                 rowNumber: option.rowNumber,
                 rowNumberWidth: option.rowNumberWidth,
                 height: option.height
