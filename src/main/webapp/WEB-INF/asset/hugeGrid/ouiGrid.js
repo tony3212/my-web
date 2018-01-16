@@ -27,7 +27,7 @@
  * @property {number} option.rowNumberWidth 序列号的宽度
  * @property {string} option.height 表格高度
  * @property {string | integer} option.width 表格宽度
- * @property {?[]} option.groupHeaders 分组信息
+ * @property {?[groupHeader]} option.groupHeaders 分组信息
  * @property {?string} option.stateName 状态字段名称（代表是否编辑过的状态名称）
  * @property {boolean} option.shrinkToFit 当table的宽度与所有可见列宽总和不等时，是否按比例缩放
  * @property {?number} option.scrollWidth 滚动条的宽度
