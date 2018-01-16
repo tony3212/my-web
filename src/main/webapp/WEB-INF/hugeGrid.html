@@ -15,11 +15,12 @@
         depends: [renderModel, gridInstance]
         renderModel = {
             colModel: [...],
-            colName: [...]
+            headModel: [{}, ...]
         }
         gridInstance: {object}
     -->
     <script id="ouiGridTemplate" type="text/template">
+        [% var colModel = renderModel.colModel; %]
         [% var gridClass = gridInstance.gridClass(renderModel); %]
         [% var gridStyle = gridInstance.gridStyle(renderModel); %]
         <div class="[%= gridClass %]" style="[%= gridStyle%]">
@@ -33,10 +34,10 @@
                     [% var headTableStyle = gridInstance.headTableStyle(renderModel); %]
                     <table class="[%= headTableClass %]" style="[%= headTableStyle %]">
                         <thead>
+                        <!-- 模板行 -->
                         [% var templateRowClass = gridInstance.templateRowClass(renderModel); %]
                         [% var headTableStyle = gridInstance.templateRowStyle(renderModel); %]
                         <tr class="grid-template-row">
-                            [% var colModel = renderModel.colModel; %]
                             [% for (var key in colModel) { %]
                             [%      var cellModel = colModel[key]; %]
                             [%      var templateCellClass = gridInstance.templateCellClass(cellModel); %]
@@ -48,24 +49,40 @@
                             </th>
                             [% } %]
                         </tr>
+
+                        <!-- 表头行 -->
+                        [% var headModel = renderModel.headModel; %]
+                        [% for (var i = 0, length = headModel.length; i < length; i++) { %]
+                        [%      var headM = headModel[i]; %]
+                        [%  console.log(headM);%]
                         <tr>
-                            [% var colModel = renderModel.colModel; %]
-                            [% for (var key in colModel) { %]
-                            [%      var cellClass = gridInstance.headCellClass(colModel[key]); %]
-                            [%      var cellStyle = gridInstance.headCellStyle(colModel[key]); %]
-                            <th data-name="[%= colModel[key].name %]"
+                            [% for (var j = 0, len = headM.length; j < len; j++) { %]
+                            [%      var head = headM[j]; %]
+                            [%      if (head.colIndex == null) { %]
+                            <th colspan="[%= head.colSpan %]" rowspan="[%= head.rowSpan %]">
+                                [%= head.label %]
+                            </th>
+                            [%      } else { %]
+                            [%      var cellModel = colModel[head.colIndex]; %]
+                            [%      var cellClass = gridInstance.headCellClass(cellModel); %]
+                            [%      var cellStyle = gridInstance.headCellStyle(cellModel); %]
+                            <th colspan="[%= head.colSpan %]" rowspan="[%= head.rowSpan %]"
+                                data-name="[%= cellModel.name %]"
                                 class="[%= cellClass %]"
                                 style="[%= cellStyle %]"
                             >
-                                [%= colModel[key].label %]
+                                [%= cellModel.label %]
                             </th>
+                            [%      } %]
                             [% } %]
                         </tr>
+                        [% } %]
                         </thead>
                     </table>
                 </div>
             </div>
 
+            <!-- 表体 -->
             [% var bodyClass = gridInstance.bodyClass(renderModel); %]
             [% var bodyStyle = gridInstance.bodyStyle(renderModel); %]
             <div class="[%= bodyClass %]" style="[%= bodyStyle %]">

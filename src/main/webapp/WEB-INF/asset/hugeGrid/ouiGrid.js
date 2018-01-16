@@ -12,6 +12,13 @@
  * @property {? string | function} colModel.cellClass 单元格class
  * @property {? string | object | function} colModel.cellAttr 单元格属性
  *
+ *
+ * @type {object} groupHeader 分组表头信息
+ * @property {string} groupHeader.startColumnName 起始列名
+ * @property {number} groupHeader.numberOfColumns 列数
+ * @property {string} groupHeader.titleText 分组名称
+ *
+ *
  * @type {object} option 初始化时的配置项
  * @property {string} option.keyName 主键的字段名
  * @property {colModel[]} option.colModel 每列列定义
@@ -320,7 +327,6 @@
             var self = this,
                 width = config["width"],
                 renderModel = config.renderModel,
-                groupHeaders = config.groupHeaders,
                 colModel = renderModel.colModel, defaultColModel, rowNumberCol,
                 gridWidth, tableWidth, shrinkToFit,
                 totalVisibleColWidth = 0, allNotShrinkToFitWidth = 0, ratio;
@@ -383,6 +389,76 @@
 
             config.gridWidth = gridWidth;
             config.tableWidth = tableWidth;
+            self._initHeadModel(config);
+        },
+
+        /**
+         * 初始化表头实体（用于渲染）
+         * @param config
+         * @private
+         */
+        _initHeadModel: function (config) {
+            var renderModel = config.renderModel,
+                colModel = renderModel.colModel,
+                groupHeaders = config.groupHeaders, groupHeader,
+                headModel = [], groupIndex,
+                inColumnHeader = function (text, columnHeaders) {
+                    var length = columnHeaders.length, i;
+                    for (i = 0; i < length; i++) {
+                        if (columnHeaders[i].startColumnName === text) {
+                            return i;
+                        }
+                    }
+                    return -1;
+                };
+
+            headModel[0] = [];
+            groupHeaders && (headModel[1] = []);
+
+            for (var index = 0, length = colModel.length; index < length; index++) {
+                var cellModel = colModel[index], tempCellModel, colIndex;
+
+                if (!groupHeaders) {
+                    headModel[0].push({
+                        label: cellModel.label,
+                        rowSpan: 1,
+                        colSpan: 1,
+                        colIndex: index
+                    });
+                    continue;
+                }
+                groupIndex = inColumnHeader(cellModel.name, groupHeaders);
+                if (groupIndex >= 0) {
+                    groupHeader = groupHeaders[groupIndex];
+                    headModel[0].push({
+                        label: groupHeader.titleText,
+                        rowSpan: 1,
+                        colSpan: groupHeader.numberOfColumns,
+                        colIndex: null
+                    });
+
+                    for(var j = 0; j < groupHeader.numberOfColumns; j++) {
+                        colIndex = index + j;
+                        tempCellModel = colModel[colIndex];
+                        headModel[1].push({
+                            label: tempCellModel.label,
+                            rowSpan: 1,
+                            colSpan: 1,
+                            colIndex: colIndex
+                        });
+                    }
+                    // 由于执行此句还会执行index++,所以减1
+                    index += (groupHeader.numberOfColumns - 1);
+                } else {
+                    headModel[0].push({
+                        label: cellModel.label,
+                        rowSpan: 2,
+                        colSpan: 1,
+                        colIndex: index
+                    });
+                }
+            }
+            renderModel.headModel = headModel;
         },
 
         _getRowIdOrderMap: function () {
@@ -1339,7 +1415,7 @@
          * @param {option} option
          */
         init: function (gridBox, option) {
-            var self = this, config, rowDataList, rowIdOrderMap = {}, colModel, colName, renderModel;
+            var self = this, config, rowDataList, rowIdOrderMap = {}, colModel, renderModel;
 
             self.store = {
                 option: {

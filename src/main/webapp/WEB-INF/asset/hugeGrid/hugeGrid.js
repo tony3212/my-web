@@ -34,7 +34,27 @@ $(function () {
                     formatoptions: {typeEnum: {"0": "否", "1": "是"}}
                 },
                 {
+                    name: "endNum",
+                    label: "数量",
+                    formatter: "currency",
+                    width: 100,
+                    align: "right"
+                },
+                {
                     name: "endAmt",
+                    label: "金额",
+                    width: 100,
+                    formatter: "currency"
+                },
+                {
+                    name: "yearDebitNum",
+                    label: "数量",
+                    formatter: "currency",
+                    width: 100,
+                    align: "right"
+                },
+                {
+                    name: "yearDebitAmt",
                     label: "金额",
                     width: 100,
                     formatter: "currency"
@@ -45,6 +65,10 @@ $(function () {
             $("#grid").ouiGrid({
                 keyName: "assitCode",
                 colModel: colModel,
+                groupHeaders: [
+                    {startColumnName: "endNum", numberOfColumns: 2, titleText: "期初余额"},
+                    {startColumnName: "yearDebitNum", numberOfColumns: 2, titleText: "本年累计借方"}
+                ],
                 data: data,
                 rowNumber: true,
                 rowNumberWidth: 35,
