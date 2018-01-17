@@ -54,18 +54,21 @@
                         [% var headModel = renderModel.headModel; %]
                         [% for (var i = 0, length = headModel.length; i < length; i++) { %]
                         [%      var headM = headModel[i]; %]
-                        [%  console.log(headM);%]
                         <tr>
                             [% for (var j = 0, len = headM.length; j < len; j++) { %]
                             [%      var head = headM[j]; %]
+                            [%      var cellModel = head.colIndex != null ? colModel[head.colIndex] : null; %]
+                            [%      var cellClass = gridInstance.headCellClass(head, cellModel); %]
+                            [%      var cellStyle = gridInstance.headCellStyle(head, cellModel); %]
                             [%      if (head.colIndex == null) { %]
-                            <th colspan="[%= head.colSpan %]" rowspan="[%= head.rowSpan %]">
+                            <th colspan="[%= head.colSpan %]" rowspan="[%= head.rowSpan %]"
+                                data-name="[%= head.label %]"
+                                class="[%= cellClass %]"
+                                style="[%= cellStyle %]"
+                            >
                                 [%= head.label %]
                             </th>
                             [%      } else { %]
-                            [%      var cellModel = colModel[head.colIndex]; %]
-                            [%      var cellClass = gridInstance.headCellClass(cellModel); %]
-                            [%      var cellStyle = gridInstance.headCellStyle(cellModel); %]
                             <th colspan="[%= head.colSpan %]" rowspan="[%= head.rowSpan %]"
                                 data-name="[%= cellModel.name %]"
                                 class="[%= cellClass %]"

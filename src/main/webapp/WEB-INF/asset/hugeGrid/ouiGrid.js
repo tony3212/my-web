@@ -18,6 +18,13 @@
  * @property {number} groupHeader.numberOfColumns 列数
  * @property {string} groupHeader.titleText 分组名称
  *
+ * @type {object} headCellModel 头部单元格实体
+ * @property {string} headCellModel.label 列标题
+ * @property {number} headCellModel.rowSpan 所跨的行数
+ * @property {number} headCellModel.colSpan 所跨的列数
+ * @property {number} headCellModel.colIndex 所对应colModel的索引(index）,多表头时非末级表头无值
+ * @property {[string] headCellModel.childrenColName 所包含子表头的列名
+ *
  *
  * @type {object} option 初始化时的配置项
  * @property {string} option.keyName 主键的字段名
@@ -169,6 +176,8 @@
             head: "grid-hdiv",
             headBox: "grid-hbox",
             headTable: "grid-htable",
+            headNonLeafCell: "grid-non-leaf-cell",
+            headLeafCell: "grid-leaf-cell",
             headCell: "grid-head-cell",
 
             body: "grid-bdiv",
@@ -401,7 +410,7 @@
             var renderModel = config.renderModel,
                 colModel = renderModel.colModel,
                 groupHeaders = config.groupHeaders, groupHeader,
-                headModel = [], groupIndex,
+                headModel = [], groupIndex, childrenColName, colSpan,
                 inColumnHeader = function (text, columnHeaders) {
                     var length = columnHeaders.length, i;
                     for (i = 0; i < length; i++) {
@@ -430,16 +439,13 @@
                 groupIndex = inColumnHeader(cellModel.name, groupHeaders);
                 if (groupIndex >= 0) {
                     groupHeader = groupHeaders[groupIndex];
-                    headModel[0].push({
-                        label: groupHeader.titleText,
-                        rowSpan: 1,
-                        colSpan: groupHeader.numberOfColumns,
-                        colIndex: null
-                    });
-
+                    childrenColName = [];
+                    colSpan = 0;
                     for(var j = 0; j < groupHeader.numberOfColumns; j++) {
                         colIndex = index + j;
                         tempCellModel = colModel[colIndex];
+                        childrenColName.push(tempCellModel.name);
+                        !colModel.hidden && colSpan++
                         headModel[1].push({
                             label: tempCellModel.label,
                             rowSpan: 1,
@@ -447,6 +453,13 @@
                             colIndex: colIndex
                         });
                     }
+
+                    headModel[0].push({
+                        label: groupHeader.titleText,
+                        rowSpan: 1,
+                        colSpan: colSpan,
+                        childrenColName: childrenColName
+                    })
                     // 由于执行此句还会执行index++,所以减1
                     index += (groupHeader.numberOfColumns - 1);
                 } else {
@@ -817,31 +830,33 @@
          * 获得预定义的头头部单元格的样式值
          * @private
          */
-        _predefineHeadCellClass: function (cellModel) {
-            return joinClass(this.classes.headCell);
+        _predefineHeadCellClass: function (headCellModel, cellModel) {
+            return joinClass(this.classes.headCell, cellModel != null ? this.classes.headLeafCell : this.classes.headNonLeafCell);
         },
 
         /**
          * 获得头部单元格dom的class的值，渲染单元格时使用
+         * @param {headCellModel} headCellModel
          * @param {colModel} cellModel
          */
-        headCellClass: function (cellModel) {
-            return this._predefineHeadCellClass(cellModel);
+        headCellClass: function (headCellModel, cellModel) {
+            return this._predefineHeadCellClass(headCellModel, cellModel);
         },
 
-        _predefineHeadCellStyle: function (cellModel) {
+        _predefineHeadCellStyle: function (headCellModel, cellModel) {
             var styleObject = {};
 
-            cellModel.hidden && (styleObject.display = "none");
+            cellModel != null && cellModel.hidden && (styleObject.display = "none");
             return styleObject2String(styleObject);
         },
 
         /**
          * 获得头部单元格dom的class的值，渲染单元格时使用
+         * @param {headCellModel} headCellModel
          * @param {colModel} cellModel
          */
-        headCellStyle: function (cellModel) {
-            return this._predefineHeadCellStyle(cellModel);
+        headCellStyle: function (headCellModel, cellModel) {
+            return this._predefineHeadCellStyle(headCellModel, cellModel);
         },
 
         /**
@@ -1744,17 +1759,42 @@
          * @param visible 是否显示
          */
         toggleView: function (colNameList, visible) {
-            var self = this, colModel, method;
+            var self = this, renderModel, colModel, method, findHeadCellModel, headCellModel;
+
+            findHeadCellModel = function (colName, headModel) {
+                if (!headModel) {
+                    return null;
+                }
+
+                var firstHeadModel = headModel[0], result = null;
+                
+                $.each(firstHeadModel, function (index, headM) {
+                    if (headM.childrenColName && _.contains(headM.childrenColName, colName)) {
+                        result = headM;
+                        return false;
+                    }
+                });
+                return result;
+            }
 
             colNameList = $.isArray(colNameList) ? colNameList : [colNameList];
             method  = visible ? "show" : "hide";
-            // 1.找出该列的配制项，将将该配制项的hidden置为true
-            colModel =  self.getRenderModel().colModel;
+            renderModel = self.getRenderModel();
+            colModel =  renderModel.colModel;
 
             _.each(colModel, function (cellModel) {
                 if (_.contains(colNameList, cellModel.name)) {
+                    // 1.多表头时，更改colspan
+                    headCellModel = findHeadCellModel(cellModel.name, renderModel.headModel);
+                    if (headCellModel) {
+                        headCellModel.colSpan += (cellModel.hidden === !visible ? 0 : visible ? 1 : -1);
+                        $('[data-name="' + headCellModel.label + '"]', $(self.getHead())).attr("colspan", headCellModel.colSpan);
+                    }
+
+                    // 2.找出该列的配制项，将将该配制项的hidden置为true
                     cellModel.hidden = !visible;
 
+                    // 3.对相应的列展示或隐藏
                     $('[data-name="' + cellModel.name + '"]', $(self.getHead()))[method]();
                     $('[data-name="' + cellModel.name + '"]', $(self.getBodyTBody()))[method]();
                 }

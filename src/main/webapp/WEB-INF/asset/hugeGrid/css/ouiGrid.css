@@ -39,7 +39,7 @@
     box-sizing: border-box;
 }
 
-.grid-htable tr:not(.grid-template-row) th:not([data-name]){
+.grid-htable tr:not(.grid-template-row) th.grid-non-leaf-cell{
     border-bottom: 1px solid #e4e4e4;
 }
 
