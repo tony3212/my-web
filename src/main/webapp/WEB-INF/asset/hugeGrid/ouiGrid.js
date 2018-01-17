@@ -656,9 +656,9 @@
             $.each(colModel, function (index, cellModel) {
                 cellModel.actualWidth = (!shrinkToFit || !cellModel.shrinkToFit)
                     ? cellModel.width : Math.round(cellModel.width * ratio);
-                if (!cellModel.hidden) {
-                    log("name: %s, width: %i", cellModel.name, cellModel.actualWidth);
-                }
+//                 if (!cellModel.hidden) {
+//                     log("name: %s, actualWidth: %i", cellModel.name, cellModel.actualWidth);
+//                 }
             });
 
             // 4.设置每列的宽度
