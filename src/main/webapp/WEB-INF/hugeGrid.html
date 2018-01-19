@@ -24,88 +24,98 @@
         [% var gridClass = gridInstance.gridClass(renderModel); %]
         [% var gridStyle = gridInstance.gridStyle(renderModel); %]
         <div class="[%= gridClass %]" style="[%= gridStyle%]">
-            [% var headClass = gridInstance.headClass(renderModel); %]
-            [% var headStyle = gridInstance.headStyle(renderModel); %]
-            <div class="[%= headClass %]" style="[%= headStyle %]">
-                [% var headBoxClass = gridInstance.headBoxClass(renderModel); %]
-                [% var headBoxStyle = gridInstance.headBoxStyle(renderModel); %]
-                <div class="[%= headBoxClass %]" style="[%= headBoxStyle %]">
-                    [% var headTableClass = gridInstance.headTableClass(renderModel); %]
-                    [% var headTableStyle = gridInstance.headTableStyle(renderModel); %]
-                    <table class="[%= headTableClass %]" style="[%= headTableStyle %]">
-                        <thead>
-                        <!-- 模板行 -->
-                        [% var templateRowClass = gridInstance.templateRowClass(renderModel); %]
-                        [% var headTableStyle = gridInstance.templateRowStyle(renderModel); %]
+            <div class="grid-view">
+                [% var headClass = gridInstance.headClass(renderModel); %]
+                [% var headStyle = gridInstance.headStyle(renderModel); %]
+                <div class="[%= headClass %]" style="[%= headStyle %]">
+                    [% var headBoxClass = gridInstance.headBoxClass(renderModel); %]
+                    [% var headBoxStyle = gridInstance.headBoxStyle(renderModel); %]
+                    <div class="[%= headBoxClass %]" style="[%= headBoxStyle %]">
+                        [% var headTableClass = gridInstance.headTableClass(renderModel); %]
+                        [% var headTableStyle = gridInstance.headTableStyle(renderModel); %]
+                        <table class="[%= headTableClass %]" style="[%= headTableStyle %]">
+                            <thead>
+                            <!-- 模板行 -->
+                            [% var templateRowClass = gridInstance.templateRowClass(renderModel); %]
+                            [% var headTableStyle = gridInstance.templateRowStyle(renderModel); %]
+                            <tr class="grid-template-row">
+                                [% for (var key in colModel) { %]
+                                [%      var cellModel = colModel[key]; %]
+                                [%      var templateCellClass = gridInstance.templateCellClass(cellModel); %]
+                                [%      var templateCellStyle = gridInstance.templateCellStyle(cellModel); %]
+                                <th data-name="[%= cellModel.name %]"
+                                    class="[%= templateCellClass %]"
+                                    style="[%= templateCellStyle %]"
+                                >
+                                </th>
+                                [% } %]
+                            </tr>
+
+                            <!-- 表头行 -->
+                            [% var headModel = renderModel.headModel; %]
+                            [% for (var i = 0, length = headModel.length; i < length; i++) { %]
+                            [%      var headM = headModel[i]; %]
+                            <tr>
+                                [% for (var j = 0, len = headM.length; j < len; j++) { %]
+                                [%      var head = headM[j]; %]
+                                [%      var cellModel = head.colIndex != null ? colModel[head.colIndex] : null; %]
+                                [%      var cellClass = gridInstance.headCellClass(head, cellModel); %]
+                                [%      var cellStyle = gridInstance.headCellStyle(head, cellModel); %]
+                                [%      if (head.colIndex == null) { %]
+                                <th colspan="[%= head.colSpan %]" rowspan="[%= head.rowSpan %]"
+                                    data-name="[%= head.label %]"
+                                    class="[%= cellClass %]"
+                                    style="[%= cellStyle %]"
+                                >
+                                    <div>
+                                        [%= head.label %]
+                                    </div>
+                                </th>
+                                [%      } else { %]
+                                <th colspan="[%= head.colSpan %]" rowspan="[%= head.rowSpan %]"
+                                    data-name="[%= cellModel.name %]"
+                                    class="[%= cellClass %]"
+                                    style="[%= cellStyle %]"
+                                >
+                                    <div>
+                                        [%= cellModel.label %]
+                                        <span class="grid-col-resize" data-col-index="[%= head.colIndex %]">&nbsp;</span>
+                                    </div>
+                                </th>
+                                [%      } %]
+                                [% } %]
+                            </tr>
+                            [% } %]
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 表体 -->
+                [% var bodyClass = gridInstance.bodyClass(renderModel); %]
+                [% var bodyStyle = gridInstance.bodyStyle(renderModel); %]
+                <div class="[%= bodyClass %]" style="[%= bodyStyle %]">
+                    [% var bodyTableClass = gridInstance.bodyTableClass(renderModel); %]
+                    [% var bodyTableStyle = gridInstance.bodyTableStyle(renderModel); %]
+                    <table class="[%= bodyTableClass %]" style="[%= bodyTableStyle %]">
                         <tr class="grid-template-row">
+                            [% var colModel = renderModel.colModel; %]
                             [% for (var key in colModel) { %]
                             [%      var cellModel = colModel[key]; %]
                             [%      var templateCellClass = gridInstance.templateCellClass(cellModel); %]
                             [%      var templateCellStyle = gridInstance.templateCellStyle(cellModel); %]
-                            <th data-name="[%= cellModel.name %]"
+                            <td data-name="[%= cellModel.name %]"
                                 class="[%= templateCellClass %]"
                                 style="[%= templateCellStyle %]"
                             >
-                            </th>
+                            </td>
                             [% } %]
                         </tr>
-
-                        <!-- 表头行 -->
-                        [% var headModel = renderModel.headModel; %]
-                        [% for (var i = 0, length = headModel.length; i < length; i++) { %]
-                        [%      var headM = headModel[i]; %]
-                        <tr>
-                            [% for (var j = 0, len = headM.length; j < len; j++) { %]
-                            [%      var head = headM[j]; %]
-                            [%      var cellModel = head.colIndex != null ? colModel[head.colIndex] : null; %]
-                            [%      var cellClass = gridInstance.headCellClass(head, cellModel); %]
-                            [%      var cellStyle = gridInstance.headCellStyle(head, cellModel); %]
-                            [%      if (head.colIndex == null) { %]
-                            <th colspan="[%= head.colSpan %]" rowspan="[%= head.rowSpan %]"
-                                data-name="[%= head.label %]"
-                                class="[%= cellClass %]"
-                                style="[%= cellStyle %]"
-                            >
-                                [%= head.label %]
-                            </th>
-                            [%      } else { %]
-                            <th colspan="[%= head.colSpan %]" rowspan="[%= head.rowSpan %]"
-                                data-name="[%= cellModel.name %]"
-                                class="[%= cellClass %]"
-                                style="[%= cellStyle %]"
-                            >
-                                [%= cellModel.label %]
-                            </th>
-                            [%      } %]
-                            [% } %]
-                        </tr>
-                        [% } %]
-                        </thead>
                     </table>
                 </div>
-            </div>
 
-            <!-- 表体 -->
-            [% var bodyClass = gridInstance.bodyClass(renderModel); %]
-            [% var bodyStyle = gridInstance.bodyStyle(renderModel); %]
-            <div class="[%= bodyClass %]" style="[%= bodyStyle %]">
-                [% var bodyTableClass = gridInstance.bodyTableClass(renderModel); %]
-                [% var bodyTableStyle = gridInstance.bodyTableStyle(renderModel); %]
-                <table class="[%= bodyTableClass %]" style="[%= bodyTableStyle %]">
-                    <tr class="grid-template-row">
-                        [% var colModel = renderModel.colModel; %]
-                        [% for (var key in colModel) { %]
-                        [%      var cellModel = colModel[key]; %]
-                        [%      var templateCellClass = gridInstance.templateCellClass(cellModel); %]
-                        [%      var templateCellStyle = gridInstance.templateCellStyle(cellModel); %]
-                        <td data-name="[%= cellModel.name %]"
-                            class="[%= templateCellClass %]"
-                            style="[%= templateCellStyle %]"
-                        >
-                        </td>
-                        [% } %]
-                    </tr>
-                </table>
+                <!-- 拖拽时使用 -->
+                <div class="grid-resize-mark" style="display: none;"></div>
             </div>
         </div>
     </script>

@@ -1567,6 +1567,63 @@
                 $(self.getHead()).scrollLeft($(this).scrollLeft());
             });
 
+            $(".grid-col-resize", $grid)
+                .on("mousedown", function (event) {
+                    var $colResize = $(this), gridLeftPos = $body.offset().left;
+
+                    self.resizing = {
+                        colIndex: $colResize.attr("data-col-index"),
+                        startX: event.clientX,
+                        sOL: event.clientX - gridLeftPos
+                    };
+                    $(".grid-resize-mark", $grid)
+                        .show()
+                        .css({
+                            left: self.resizing + 2
+                        });
+                    $(self.getHead(), $grid)
+                        .on("selectstart.grid", function () {
+                            return false;
+                        });
+                });
+
+            $($grid)
+                .on("mousemove", function (event) {
+                    if (self.resizing) {
+                        var diff = event.clientX - self.resizing.startX;
+                        $(".grid-resize-mark", $grid).css({
+                            left: self.resizing.sOL + diff + 2
+                        });
+                    }
+                })
+                .on("mouseup", function (event) {
+                    if (self.resizing) {
+                        var diff = event.clientX - self.resizing.startX,
+                            colIndex = self.resizing.colIndex,
+                            cellModel, config;
+
+                        config = self.getConfig();
+                        cellModel = self.getRenderModel()["colModel"][colIndex];
+                        console.log("xxx");
+
+                        if (config["shrinkToFit"] && !config["forceFit"]) {
+                            cellModel.width += diff * (cellModel.width / cellModel.actualWidth);
+                            config.tableWidth += diff;
+                            self._resizeWidth();
+                        } else {
+                            cellModel.width += diff;
+                            self._resizeWidth();
+                        }
+                        $(".grid-resize-mark", $grid).hide();
+                        $(self.getHead(), $grid)
+                            .off("selectstart.grid")
+                            .on("selectstart.grid", function () {
+                                return true;
+                            });
+                        self.resizing = false;
+                    }
+                });
+
         },
 
         /**

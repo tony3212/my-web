@@ -79,3 +79,22 @@
     border-bottom: 0 none;
     box-sizing: border-box;
 }
+
+.grid-htable .grid-col-resize {
+    position: relative;
+    float: right;
+    cursor: col-resize;
+    overflow: hidden;
+    border: 1px solid deeppink;
+    width: 2px;
+}
+.grid .grid-resize-mark {
+    position: absolute;
+    cursor: col-resize;
+    overflow: hidden;
+    border: 0 none;
+    width: 2px;
+    background-color: #777777;
+    top: 0;
+    height: 100%;
+}
