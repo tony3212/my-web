@@ -1577,10 +1577,11 @@
                         sOL: event.clientX - gridLeftPos
                     };
                     $(".grid-resize-mark", $grid)
-                        .show()
                         .css({
                             left: self.resizing + 2
-                        });
+                        })
+                        .show();
+
                     $(self.getHead(), $grid)
                         .on("selectstart.grid", function () {
                             return false;
