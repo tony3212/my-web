@@ -1310,10 +1310,11 @@
 
         /**
          * 设置行数据
-         * @param rowId
-         * @param rowData
+         * @param rowId 行id
+         * @param rowData 行数据
+         * @param refresh 是否刷新dom
          */
-        setRowData: function (rowId, rowData) {
+        setRowData: function (rowId, rowData, refresh) {
             var self = this, $row, index, oldRowData, newRowData, rowHtml;
 
             index = self._getIndexByRowId(rowId);
@@ -1327,19 +1328,22 @@
             // 如果是未修改状态，则标记为修改状态
             self._setModifiedIfInitial(newRowData)
 
-            // 如果已经加在载页面中，则重新渲染
-            $row = $($$(rowId));
-            if ($row.length > 0) {
-                rowHtml = templateUtil.getHTML("ouiGridDataTemplate", {
-                    renderPageModel: {
-                        startIndex: index,
-                        endIndex: index,
-                        pageData: [newRowData]
-                    },
-                    renderModel: self.getRenderModel(),
-                    gridInstance: self
-                });
-                $row.replaceWith(rowHtml);
+            refresh == null && (refresh = true);
+            if (refresh) {
+                // 如果已经加在载页面中，则重新渲染
+                $row = $($$(rowId));
+                if ($row.length > 0) {
+                    rowHtml = templateUtil.getHTML("ouiGridDataTemplate", {
+                        renderPageModel: {
+                            startIndex: index,
+                            endIndex: index,
+                            pageData: [newRowData]
+                        },
+                        renderModel: self.getRenderModel(),
+                        gridInstance: self
+                    });
+                    $row.replaceWith(rowHtml);
+                }
             }
         },
 
